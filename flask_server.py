@@ -19,8 +19,8 @@ import neopixel_thread as np_thread
 from neopixel_config_repository import NeoPixelConfigRepository
 from rgb_frame import RgbFrame, RgbFrameOptions
 
-apiPort = 8000
-wsPort = 8765
+API_PORT = 8000
+WS_PORT = 8765
 # maxBytes of a log file is 5MB
 # backupCount number of log files will be created until deleting old log files
 handler = RotatingFileHandler("cc_client.log", maxBytes=5 * 1024 * 1024, backupCount=1)
@@ -34,14 +34,14 @@ logger.addHandler(handler)
 
 cfg_repository = NeoPixelConfigRepository("config.db", logger)
 
-app = Flask(__name__.split(".")[0])
+app = Flask(__name__.split(".", maxsplit=1)[0])
 queue = mp.Queue()
 
 
 def websocket_handler(websocket):
     try:
         for message in websocket:
-            if type(message) is bytes:
+            if message.isinstance(bytes):
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
@@ -77,17 +77,16 @@ def websocket_handler(websocket):
             + " Reason: "
             + cc.reason
         )
-        pass
 
 
 def broadcast_handler():
-    MCAST_GRP = "230.0.0.0"
-    MCAST_PORT = 8007
+    multicast_group = "230.0.0.0"
+    multicast_port = 8007
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((MCAST_GRP, MCAST_PORT))
-    mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
+    sock.bind((multicast_group, multicast_port))
+    mreq = struct.pack("4sl", socket.inet_aton(multicast_group), socket.INADDR_ANY)
 
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
@@ -96,20 +95,20 @@ def broadcast_handler():
         logger.debug(str(data))
         logger.debug(str(addr))
         # Respond to the broadcast
-        sockB = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        socket_b = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         discoveryDict = (
             '{"wsPort": '
-            + str(wsPort)
+            + str(WS_PORT)
             + ', "apiPort": '
-            + str(apiPort)
+            + str(API_PORT)
             + ', "name": '
             + '"'
             + str(socket.gethostname() + '"' + "}")
         )
-        sockB.sendto(discoveryDict.encode(), addr)
+        socket_b.sendto(discoveryDict.encode(), addr)
 
 
-def ws_handler(queue: mp.Queue):
+def ws_handler():
     with serve(websocket_handler, "0.0.0.0", 8765) as websocket:
         websocket.serve_forever()
 
@@ -183,7 +182,6 @@ def main():
     p1.start()
     p2.start()
     p3.start()
-    # app.run(debug=False, use_reloader=False)
 
     config_list = cfg_repository.get_configs()
     queue.put_nowait(config_list)

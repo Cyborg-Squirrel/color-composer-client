@@ -23,7 +23,11 @@ class NeoPixelConfigRepository:
                 cursor = connection.cursor()
                 cursor.execute(
                     """CREATE TABLE IF NOT EXISTS NeopixelConfig
-                                (id INT PRIMARY KEY NOT NULL, lightId TEXT NOT NULL UNIQUE, leds INTEGER NOT NULL, pin INTEGER NOT NULL, brightness INTEGER NOT NULL)"""
+                                (id INT PRIMARY KEY NOT NULL, 
+                                lightId TEXT NOT NULL UNIQUE, 
+                                leds INTEGER NOT NULL, 
+                                pin INTEGER NOT NULL, 
+                                brightness INTEGER NOT NULL)"""
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -64,7 +68,8 @@ class NeoPixelConfigRepository:
                 if id == 0:
                     id = 1
                 cursor.execute(
-                    """INSERT INTO NeopixelConfig (id, lightId, leds, pin, brightness) VALUES (?, ?, ?, ?, ?)""",
+                    """INSERT INTO NeopixelConfig (id, lightId, leds, pin, brightness) 
+                    VALUES (?, ?, ?, ?, ?)""",
                     (id, config.id, config.leds, config.pin, config.brightness),
                 )
                 connection.commit()
