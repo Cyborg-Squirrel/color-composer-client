@@ -1,3 +1,7 @@
+"""
+The RGB frame. Contains color data and rendering options.
+"""
+
 class RgbFrameOptions:
     clear_buffer: bool
 

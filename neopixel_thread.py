@@ -1,3 +1,8 @@
+"""
+The NeoPixel thread. Receives configs and color data on the multiprocessing
+queue for the neopixel_renderer.
+"""
+
 import logging
 import multiprocessing as mp
 from queue import Empty

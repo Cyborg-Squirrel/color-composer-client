@@ -1,3 +1,7 @@
+"""
+The renderer class. Sends specified color data to the LED strip using the neopixel package.
+"""
+
 from datetime import datetime
 from logging import Logger
 

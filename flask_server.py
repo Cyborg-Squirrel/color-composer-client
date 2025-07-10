@@ -1,3 +1,7 @@
+"""
+The main class and webserver. Handles color data WebSocket streams, and config REST APIs.
+"""
+
 import logging
 import multiprocessing as mp
 import socket

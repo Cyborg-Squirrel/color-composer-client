@@ -1,3 +1,7 @@
+"""
+The NeoPixel config object.
+"""
+
 import json
 
 from validation_result import ValidationResult

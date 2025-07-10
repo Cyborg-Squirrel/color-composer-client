@@ -1,3 +1,7 @@
+"""
+The SQLite repository. Does CRUD operations for config objects in the database.
+"""
+
 import logging
 import sqlite3
 

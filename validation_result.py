@@ -1,3 +1,7 @@
+"""
+The validation result of a NeoPixel config.
+"""
+
 class ValidationResult:
     valid: bool
     reason: str
