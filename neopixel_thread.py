@@ -27,14 +27,14 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
             )
         except Empty:
             queue_msg = None
-        if type(queue_msg) is npc.NeoPixelConfig:
+        if queue_msg is not None and queue_msg.isinstance(npc.NeoPixelConfig):
             logger.debug("Received NeoPixelConfig " + queue_msg.to_json())
             validation_result = queue_msg.check_validity()
             if validation_result.valid:
                 renderer.update_config(queue_msg)
             else:
                 logger.error("Invalid NeoPixelConfig! " + str(validation_result.reason))
-        elif type(queue_msg) is list:
+        elif queue_msg is not None and  queue_msg.isinstance(list):
             logger.debug("Received NeoPixelConfig list")
             valid = True
             reason = ""
@@ -49,11 +49,12 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
                 renderer.update_configs(queue_msg)
             else:
                 logger.error("Invalid config in NeoPixelConfig list! " + str(reason))
-        elif type(queue_msg) is RgbFrame:
+        elif queue_msg is not None and queue_msg.isinstance(RgbFrame):
             if queue_msg.options.clear_buffer:
                 renderer.clear_buffer(queue_msg.light_id)
 
-            # If the timestamp is set to 0, render now. Otherwise queue it to be rendered in the future.
+            # If the timestamp is set to 0, render now. 
+            # Otherwise queue it to be rendered in the future.
             if queue_msg.timestamp == 0:
                 renderer.render_frame(queue_msg)
             else:

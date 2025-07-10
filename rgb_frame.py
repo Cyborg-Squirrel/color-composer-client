@@ -2,6 +2,8 @@
 The RGB frame. Contains color data and rendering options.
 """
 
+# pylint: disable=too-few-public-methods
+
 class RgbFrameOptions:
     clear_buffer: bool
 
