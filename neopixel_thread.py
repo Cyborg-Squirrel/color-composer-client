@@ -53,7 +53,7 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
             if queue_msg.options.clear_buffer:
                 renderer.clear_buffer(queue_msg.light_id)
 
-            # If the timestamp is set to 0, render now. 
+            # If the timestamp is set to 0, render now.
             # Otherwise queue it to be rendered in the future.
             if queue_msg.timestamp == 0:
                 renderer.render_frame(queue_msg)
