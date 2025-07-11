@@ -131,8 +131,9 @@ def configuration():
                 jsonified_config_list += ","
             i += 1
         jsonified_config_list += "]"
-        return Response('{"configList": ' + jsonified_config_list + "}", mimetype="application/json")
-    elif request.method == "POST":
+        return Response('{"configList": ' + jsonified_config_list + "}", 
+                        mimetype="application/json")
+    if request.method == "POST":
         if request.is_json:
             json_dict = request.get_json()
             config = np_config.from_json(json_dict)
