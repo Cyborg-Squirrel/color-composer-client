@@ -131,7 +131,7 @@ def configuration():
                 jsonified_config_list += ","
             i += 1
         jsonified_config_list += "]"
-        return Response('{"configList": ' + jsonified_config_list + "}", 
+        return Response('{"configList": ' + jsonified_config_list + "}",
                         mimetype="application/json")
     if request.method == "POST":
         if request.is_json:
@@ -142,8 +142,7 @@ def configuration():
                 cfg_repository.save_config(config)
                 queue.put_nowait(config)
                 return Response(status=201)
-            else:
-                error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+            error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
         else:
             error = (jsonify({"error": "Request must be JSON"}), 400)
     elif request.method == "DELETE":
