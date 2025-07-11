@@ -28,19 +28,24 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
             )
         except Empty:
             queue_msg = None
-        if queue_msg is not None and queue_msg.isinstance(npc.NeoPixelConfig):
+        if queue_msg is not None and isinstance(queue_msg, npc.NeoPixelConfig):
             logger.debug("Received NeoPixelConfig %s", queue_msg.to_json())
             _update_config(renderer, logger, queue_msg)
-        elif queue_msg is not None and queue_msg.isinstance(list):
+        elif queue_msg is not None and __is_config_list(queue_msg):
             logger.debug("Received NeoPixelConfig list")
             for cfg in queue_msg:
-                logger.debug("Config %s", queue_msg.to_json())
+                logger.debug("Config %s", cfg.to_json())
                 _update_config(renderer, logger, cfg)
-        elif queue_msg is not None and queue_msg.isinstance(RgbFrame):
+        elif queue_msg is not None and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
         idle = renderer.queue_empty() and queue_msg is None
         if not renderer.queue_empty():
             renderer.render_queue()
+
+def __is_config_list(queue_msg):
+    if isinstance(queue_msg, list):
+        return all(isinstance(m, (int, npc.NeoPixelConfig)) for m in queue_msg)
+    return False
 
 def _update_config(renderer: NeoPixelRenderer,
                    logger: logging.Logger,

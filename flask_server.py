@@ -42,7 +42,7 @@ def websocket_handler(websocket):
     """WebSocket handler function"""
     try:
         for message in websocket:
-            if message.isinstance(bytes):
+            if isinstance(message, bytes):
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
