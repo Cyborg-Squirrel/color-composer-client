@@ -8,6 +8,7 @@ from validation_result import ValidationResult
 
 
 class NeoPixelConfig:
+    """Config class for NeoPixel LED strips"""
     # The server assigned uuid of these LEDs
     uuid: str
 
@@ -67,8 +68,8 @@ class NeoPixelConfig:
 
 def from_json(json_dict: dict) -> NeoPixelConfig:
     """Serializes a config from json."""
-    id = json_dict.get("id", "").strip()
+    uuid = json_dict.get("uuid", "").strip()
     pin = json_dict.get("pin", "").strip()
     leds = json_dict.get("leds", 0)
     brightness = json_dict.get("brightness", 0)
-    return NeoPixelConfig(id, pin, leds, brightness)
+    return NeoPixelConfig(uuid, pin, leds, brightness)
