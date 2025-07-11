@@ -13,6 +13,7 @@ from rgb_frame import RgbFrame
 
 
 def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
+    """Starts the thread. This will run in the background until the process is killed."""
     logger.info("Starting neopixel thread...")
     # One hundredth of a second
     queue_timeout_fast = 1 / 100

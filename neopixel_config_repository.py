@@ -7,8 +7,11 @@ import sqlite3
 
 import neopixel_config as np_config
 
+# Surpressing lint to allow catching more types of exceptions
+# pylint: disable=broad-exception-caught
 
 class NeoPixelConfigRepository:
+    """SQL Lite access class"""
 
     database_name: str
     logger: logging.Logger
@@ -18,6 +21,7 @@ class NeoPixelConfigRepository:
         self.logger = logger
 
     def create(self):
+        """Creates the table if it doesn't exist"""
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
@@ -29,7 +33,7 @@ class NeoPixelConfigRepository:
                                 (id INT PRIMARY KEY NOT NULL, 
                                 uuid TEXT NOT NULL UNIQUE, 
                                 leds INTEGER NOT NULL, 
-                                pin INTEGER NOT NULL, 
+                                pin INTEGER NOT NULL UNIQUE, 
                                 brightness INTEGER NOT NULL)"""
                 )
                 connection.commit()
@@ -39,6 +43,7 @@ class NeoPixelConfigRepository:
             self.logger.error(f"Error {e}")
 
     def get_configs(self) -> list[np_config.NeoPixelConfig]:
+        """Gets all configs from the database"""
         config_list = list[np_config.NeoPixelConfig]()
         try:
             with sqlite3.connect(self.database_name) as connection:
@@ -60,20 +65,21 @@ class NeoPixelConfigRepository:
         return config_list
 
     def save_config(self, config: np_config.NeoPixelConfig):
+        """Saves a new config to the database"""
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute("SELECT id FROM configs ORDER BY id DESC LIMIT 1")
                 connection.commit()
-                id = 0
+                sql_id = 0
                 for result in cursor:
-                    id = result[0] + 1
-                if id == 0:
-                    id = 1
+                    sql_id = result[0] + 1
+                if sql_id == 0:
+                    sql_id = 1
                 cursor.execute(
                     """INSERT INTO configs (id, uuid, leds, pin, brightness) 
                     VALUES (?, ?, ?, ?, ?)""",
-                    (id, config.uuid, config.leds, config.pin, config.brightness),
+                    (sql_id, config.uuid, config.leds, config.pin, config.brightness),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -82,6 +88,7 @@ class NeoPixelConfigRepository:
             self.logger.error(f"Error {e}")
 
     def delete_config(self, light_id: str):
+        """Delets a config from the database"""
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
