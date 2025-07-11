@@ -59,6 +59,6 @@ def _handle_new_frame(renderer: NeoPixelRenderer,frame: RgbFrame):
     # If the timestamp is set to 0, render now.
     # Otherwise queue it to be rendered in the future.
     if frame.timestamp == 0:
-         renderer.render_frame(frame)
+        renderer.render_frame(frame)
     else:
         renderer.queue_frame(frame)
