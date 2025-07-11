@@ -21,11 +21,11 @@ class NeoPixelRenderer:
         self.logger = logger
 
     def update_config(self, config: NeoPixelConfig):
-        if config.id in self.neopixels:
-            np = self.neopixels.pop(config.id)
+        if config.uuid in self.neopixels:
+            np = self.neopixels.pop(config.uuid)
             np.deinit()
         np = self.__neopixel_from_config(config)
-        self.neopixels[config.id] = np
+        self.neopixels[config.uuid] = np
 
     def update_configs(self, config_list: list[NeoPixelConfig]):
         # deinit all neopixels to free up the GPIO pins
@@ -37,7 +37,7 @@ class NeoPixelRenderer:
         # Add configured NeoPixels to the dictionary
         for config in config_list:
             np = self.__neopixel_from_config(config)
-            self.neopixels[config.id] = np
+            self.neopixels[config.uuid] = np
 
         # Remove any buffered frames for NeoPixels which have been removed from the config
         i = 0

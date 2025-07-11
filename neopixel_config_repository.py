@@ -21,10 +21,13 @@ class NeoPixelConfigRepository:
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
+                # Remove SQL ALTER commands after migrating Pi clients to new schema
+                cursor.execute("""ALTER TABLE NeopixelConfig RENAME COLUMN lightId TO uuid;""")
+                cursor.execute("""ALTER TABLE NeopixelConfig RENAME TO configs;""")
                 cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS NeopixelConfig
+                    """CREATE TABLE IF NOT EXISTS configs
                                 (id INT PRIMARY KEY NOT NULL, 
-                                lightId TEXT NOT NULL UNIQUE, 
+                                uuid TEXT NOT NULL UNIQUE, 
                                 leds INTEGER NOT NULL, 
                                 pin INTEGER NOT NULL, 
                                 brightness INTEGER NOT NULL)"""
@@ -41,7 +44,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT lightId, pin, leds, brightness FROM NeopixelConfig"
+                    "SELECT uuid, pin, leds, brightness FROM configs"
                 )
                 connection.commit()
 
@@ -60,7 +63,7 @@ class NeoPixelConfigRepository:
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
-                cursor.execute("SELECT id FROM NeopixelConfig ORDER BY id DESC LIMIT 1")
+                cursor.execute("SELECT id FROM configs ORDER BY id DESC LIMIT 1")
                 connection.commit()
                 id = 0
                 for result in cursor:
@@ -68,9 +71,9 @@ class NeoPixelConfigRepository:
                 if id == 0:
                     id = 1
                 cursor.execute(
-                    """INSERT INTO NeopixelConfig (id, lightId, leds, pin, brightness) 
+                    """INSERT INTO configs (id, uuid, leds, pin, brightness) 
                     VALUES (?, ?, ?, ?, ?)""",
-                    (id, config.id, config.leds, config.pin, config.brightness),
+                    (id, config.uuid, config.leds, config.pin, config.brightness),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -83,7 +86,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "DELETE FROM NeopixelConfig WHERE lightId = ?",
+                    "DELETE FROM configs WHERE uuid = ?",
                     (light_id,),
                 )
                 connection.commit()
