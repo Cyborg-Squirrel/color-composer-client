@@ -163,7 +163,7 @@ def main():
     """Main function to start the threads:
     WebSocket handler thread, UDP broadcast handler thread, and NeoPixel thread."""
     cfg_repository.create()
-    p1 = mp.Process(name="ws_handler", target=ws_handler, args=(queue,))
+    p1 = mp.Process(name="ws_handler", target=ws_handler)
     p2 = mp.Process(name="broadcast_handler", target=broadcast_handler)
     p3 = mp.Process(
         name="neopixel_thread",
