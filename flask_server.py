@@ -39,6 +39,7 @@ queue = mp.Queue()
 
 
 def websocket_handler(websocket):
+    """WebSocket handler function"""
     try:
         for message in websocket:
             if message.isinstance(bytes):
@@ -48,7 +49,7 @@ def websocket_handler(websocket):
 
                 # The GPIO pin the LED strip is connected to
                 pin_bytes = message[1:5]
-                pin = pin_bytes.decode("ascii").strip()
+                # pin = pin_bytes.decode("ascii").strip()
 
                 # The time when to display the RGB data on the strip
                 timestamp_bytes = message[5:13]
@@ -67,19 +68,13 @@ def websocket_handler(websocket):
                     time.sleep(1 / 100)
                 websocket.send("ACK")
             else:
-                logger.warning(
-                    "Unknown message type " + str(type(message)) + " must be bytes"
-                )
+                logger.warning("Unknown message type %s must be bytes", str(type(message)))
     except ConnectionClosed as cc:
-        logger.info(
-            "WebSocket connection closed. Code: "
-            + str(cc.code)
-            + " Reason: "
-            + cc.reason
-        )
+        logger.info("WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason)
 
 
 def broadcast_handler():
+    """UDP broadcast handler. Used for network discovery."""
     multicast_group = "230.0.0.0"
     multicast_port = 8007
 
@@ -96,7 +91,7 @@ def broadcast_handler():
         logger.debug(str(addr))
         # Respond to the broadcast
         socket_b = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        discoveryDict = (
+        discovery_dict = (
             '{"wsPort": '
             + str(WS_PORT)
             + ', "apiPort": '
@@ -105,16 +100,18 @@ def broadcast_handler():
             + '"'
             + str(socket.gethostname() + '"' + "}")
         )
-        socket_b.sendto(discoveryDict.encode(), addr)
+        socket_b.sendto(discovery_dict.encode(), addr)
 
 
 def ws_handler():
+    """Routes incoming WebSocket packets to the handler function."""
     with serve(websocket_handler, "0.0.0.0", 8765) as websocket:
         websocket.serve_forever()
 
 
 @app.route("/time", methods=["GET"])
-def currentTime():
+def current_time():
+    """Endpoint to get the current time"""
     now = datetime.now()
     now_as_millis = int(now.timestamp() * 1000)
     return jsonify({"millisSinceEpoch": now_as_millis})
@@ -122,6 +119,7 @@ def currentTime():
 
 @app.route("/configuration", methods=["GET", "POST", "DELETE"])
 def configuration():
+    """Endpoint to get, create, or delete NeoPixel configs"""
     if request.method == "GET":
         config_list = cfg_repository.get_configs()
         jsonified_config_list = "["
@@ -152,15 +150,15 @@ def configuration():
         else:
             return jsonify({"error": "Request must be JSON"}), 400
     elif request.method == "DELETE":
-        light_id = request.args.get("lightId")
-        if type(light_id) is str:
-            cfg_repository.delete_config(light_id)
+        uuid = request.args.get("uuid")
+        if uuid is not None:
+            cfg_repository.delete_config(uuid)
             # Update the queue consumers of the config change
             config_list = cfg_repository.get_configs()
             queue.put_nowait(config_list)
             return Response(status=200)
         return (
-            jsonify({"error": "No lightId url parameter specified"}),
+            jsonify({"error": "No uuid url parameter specified"}),
             400,
         )
     else:
@@ -171,6 +169,8 @@ def configuration():
 
 
 def main():
+    """Main function to start the threads:
+    WebSocket handler thread, UDP broadcast handler thread, and NeoPixel thread."""
     cfg_repository.create()
     p1 = mp.Process(name="ws_handler", target=ws_handler, args=(queue,))
     p2 = mp.Process(name="broadcast_handler", target=broadcast_handler)
