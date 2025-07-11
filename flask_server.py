@@ -48,7 +48,7 @@ def websocket_handler(websocket):
                 options = RgbFrameOptions(clear_buffer)
 
                 # The GPIO pin the LED strip is connected to
-                pin_bytes = message[1:5]
+                # pin_bytes = message[1:5]
                 # pin = pin_bytes.decode("ascii").strip()
 
                 # The time when to display the RGB data on the strip
@@ -120,6 +120,7 @@ def current_time():
 @app.route("/configuration", methods=["GET", "POST", "DELETE"])
 def configuration():
     """Endpoint to get, create, or delete NeoPixel configs"""
+    error = None
     if request.method == "GET":
         config_list = cfg_repository.get_configs()
         jsonified_config_list = "["
@@ -130,9 +131,7 @@ def configuration():
                 jsonified_config_list += ","
             i += 1
         jsonified_config_list += "]"
-        return Response(
-            '{"configList": ' + jsonified_config_list + "}", mimetype="application/json"
-        )
+        return Response('{"configList": ' + jsonified_config_list + "}", mimetype="application/json")
     elif request.method == "POST":
         if request.is_json:
             json_dict = request.get_json()
@@ -143,12 +142,9 @@ def configuration():
                 queue.put_nowait(config)
                 return Response(status=201)
             else:
-                return (
-                    jsonify({"error": "Error parsing config JSON " + result.reason}),
-                    400,
-                )
+                error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
         else:
-            return jsonify({"error": "Request must be JSON"}), 400
+            error = (jsonify({"error": "Request must be JSON"}), 400)
     elif request.method == "DELETE":
         uuid = request.args.get("uuid")
         if uuid is not None:
@@ -157,15 +153,10 @@ def configuration():
             config_list = cfg_repository.get_configs()
             queue.put_nowait(config_list)
             return Response(status=200)
-        return (
-            jsonify({"error": "No uuid url parameter specified"}),
-            400,
-        )
-    else:
-        return (
-            jsonify({"error": "Unsupported method " + request.method}),
-            400,
-        )
+        error = (jsonify({"error": "No uuid url parameter specified"}), 400)
+    if error is not None:
+        return error
+    return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
 
 def main():
