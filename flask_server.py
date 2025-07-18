@@ -133,6 +133,23 @@ def configuration():
         jsonified_config_list += "]"
         return Response('{"configList": ' + jsonified_config_list + "}",
                         mimetype="application/json")
+    if request.method == "PATCH":
+        if request.is_json:
+            config_list = cfg_repository.get_configs()
+            json_dict = request.get_json()
+            updated_config = np_config.from_json(json_dict)
+            result = updated_config.check_validity()
+            if result.valid:
+                for cfg in config_list:
+                    if cfg.uuid == updated_config.uuid:
+                        cfg_repository.update_config(updated_config)
+                        queue.put_nowait(updated_config)
+                        return Response(status=201)
+                error = (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
+            else:
+                error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+        else:
+            error = (jsonify({"error": "Request must be JSON"}), 400)
     if request.method == "POST":
         if request.is_json:
             json_dict = request.get_json()

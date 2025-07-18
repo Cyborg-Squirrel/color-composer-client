@@ -88,6 +88,22 @@ class NeoPixelConfigRepository:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
             self.logger.error(f"Error {e}")
+    
+    def update_config(self, config: np_config.NeoPixelConfig):
+        """Updates an existing config in the database"""
+        try:
+            with sqlite3.connect(self.database_name) as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?) 
+                    WHERE uuid = ?""",
+                    (config.leds, config.pin, config.brightness, config.uuid),
+                )
+                connection.commit()
+        except sqlite3.Error as e:
+            self.logger.error(f"sqlite3 error {e}")
+        except Exception as e:
+            self.logger.error(f"Error {e}")
 
     def delete_config(self, light_id: str):
         """Delets a config from the database"""
