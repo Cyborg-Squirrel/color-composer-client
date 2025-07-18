@@ -18,19 +18,19 @@ class RgbFrame:
     The RGB frame. Includes a LED strip, render options, a timestamp, 
     and the RGB values to be displayed.
     """
-    light_id: str
+    pin: str
     timestamp: int
     options: RgbFrameOptions
     rgb_data: list[tuple[int, int, int]]
 
     def __init__(
         self,
-        light_id: str,
+        pin: str,
         timestamp: int,
         options: RgbFrameOptions,
         rgb_data: list[tuple[int, int, int]],
     ):
-        self.light_id = light_id
+        self.pin = pin
         self.timestamp = timestamp
         self.options = options
         self.rgb_data = rgb_data

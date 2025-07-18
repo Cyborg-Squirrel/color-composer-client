@@ -48,8 +48,8 @@ def websocket_handler(websocket):
                 options = RgbFrameOptions(clear_buffer)
 
                 # The GPIO pin the LED strip is connected to
-                # pin_bytes = message[1:5]
-                # pin = pin_bytes.decode("ascii").strip()
+                pin_bytes = message[1:5]
+                pin = pin_bytes.decode("ascii").strip()
 
                 # The time when to display the RGB data on the strip
                 timestamp_bytes = message[5:13]
@@ -60,9 +60,7 @@ def websocket_handler(websocket):
                     cd = (message[i], message[i + 1], message[i + 2])
                     color_data.append(cd)
                     i += 3
-                # Get current path with the leading "/" removed
-                light_id = websocket.request.path[1:]
-                frame = RgbFrame(light_id, timestamp_int, options, color_data)
+                frame = RgbFrame(pin, timestamp_int, options, color_data)
                 queue.put_nowait(frame)
                 while not queue.empty():
                     time.sleep(1 / 100)
