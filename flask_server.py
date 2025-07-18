@@ -61,7 +61,7 @@ def websocket_handler(websocket):
                     color_data.append(cd)
                     i += 3
                 # Get current path with the leading "/" removed
-                light_id = "test"  # websocket.request.path[1:]
+                light_id = websocket.request.path[1:]
                 frame = RgbFrame(light_id, timestamp_int, options, color_data)
                 queue.put_nowait(frame)
                 while not queue.empty():
