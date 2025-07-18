@@ -58,7 +58,7 @@ class NeoPixelConfig:
         """Serializes this config to json."""
         return json.dumps(
             {
-                "id": self.uuid,
+                "uuid": self.uuid,
                 "pin": self.pin,
                 "leds": self.leds,
                 "brightness": self.brightness,
