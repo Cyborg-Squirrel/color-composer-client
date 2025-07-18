@@ -21,16 +21,16 @@ class NeoPixelRenderer:
         self.logger = logger
 
     def update_config(self, config: NeoPixelConfig):
-        if config.uuid in self.neopixels:
+        if config.pin in self.neopixels:
             np = self.neopixels.pop(config.pin)
             np.deinit()
         np = self.__neopixel_from_config(config)
-        self.neopixels[config.uuid] = np
+        self.neopixels[config.pin] = np
 
     def update_configs(self, config_list: list[NeoPixelConfig]):
         # deinit all neopixels to free up the GPIO pins
-        for id in self.neopixels:
-            self.neopixels[id].deinit()
+        for key in self.neopixels:
+            self.neopixels[key].deinit()
 
         self.neopixels.clear()
 
@@ -57,8 +57,6 @@ class NeoPixelRenderer:
         ]
 
     def render_frame(self, frame: RgbFrame):
-        for pin in self.neopixels:
-            self.logger.info("Neopixel configured on pin %s", pin)
         np = self.neopixels[frame.pin]
         frame_length = len(frame.rgb_data)
         for i in range(np.n if np.n <= frame_length else frame_length):
@@ -86,10 +84,10 @@ class NeoPixelRenderer:
             frame = self.buffered_frames[i]
             diff = abs(frame.timestamp - now_as_millis)
             if diff <= threshold:
-                has_frame_with_matching_light_id = False
+                has_frame_with_matching_pin = False
                 for ftr in frames_to_render:
-                    has_frame_with_matching_light_id |= ftr.pin == frame.pin
-                if has_frame_with_matching_light_id:
+                    has_frame_with_matching_pin |= ftr.pin == frame.pin
+                if has_frame_with_matching_pin:
                     i += 1
                 else:
                     frames_to_render.append(frame)
