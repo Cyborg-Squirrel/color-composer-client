@@ -88,7 +88,7 @@ class NeoPixelConfigRepository:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
             self.logger.error(f"Error {e}")
-    
+
     def update_config(self, config: np_config.NeoPixelConfig):
         """Updates an existing config in the database"""
         try:

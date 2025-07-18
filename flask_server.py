@@ -122,59 +122,68 @@ def configuration():
     """Endpoint to get, create, or delete NeoPixel configs"""
     error = None
     if request.method == "GET":
-        config_list = cfg_repository.get_configs()
-        jsonified_config_list = "["
-        i = 0
-        while i < len(config_list):
-            jsonified_config_list += config_list[i].to_json()
-            if i < len(config_list) - 1:
-                jsonified_config_list += ","
-            i += 1
-        jsonified_config_list += "]"
-        return Response('{"configList": ' + jsonified_config_list + "}",
-                        mimetype="application/json")
+        return __handle_get()
     if request.method == "PATCH":
-        if request.is_json:
-            config_list = cfg_repository.get_configs()
-            json_dict = request.get_json()
-            updated_config = np_config.from_json(json_dict)
-            result = updated_config.check_validity()
-            if result.valid:
-                for cfg in config_list:
-                    if cfg.uuid == updated_config.uuid:
-                        cfg_repository.update_config(updated_config)
-                        queue.put_nowait(updated_config)
-                        return Response(status=201)
-                error = (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
-            else:
-                error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
-        else:
-            error = (jsonify({"error": "Request must be JSON"}), 400)
+        return __handle_patch(request)
     if request.method == "POST":
-        if request.is_json:
-            json_dict = request.get_json()
-            config = np_config.from_json(json_dict)
-            result = config.check_validity()
-            if result.valid:
-                cfg_repository.save_config(config)
-                queue.put_nowait(config)
-                return Response(status=201)
-            error = (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
-        else:
-            error = (jsonify({"error": "Request must be JSON"}), 400)
+        return __handle_post(request)
     elif request.method == "DELETE":
         uuid = request.args.get("uuid")
         if uuid is not None:
-            cfg_repository.delete_config(uuid)
-            # Update the queue consumers of the config change
-            config_list = cfg_repository.get_configs()
-            queue.put_nowait(config_list)
-            return Response(status=200)
-        error = (jsonify({"error": "No uuid url parameter specified"}), 400)
-    if error is not None:
-        return error
+            return __handle_delete(uuid)
+        return (jsonify({"error": "No uuid url parameter specified"}), 400)
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+def __handle_get():
+    config_list = cfg_repository.get_configs()
+    jsonified_config_list = "["
+    i = 0
+    while i < len(config_list):
+        jsonified_config_list += config_list[i].to_json()
+        if i < len(config_list) - 1:
+            jsonified_config_list += ","
+        i += 1
+    jsonified_config_list += "]"
+    return Response('{"configList": ' + jsonified_config_list + "}",
+                    mimetype="application/json")
+
+def __handle_patch(request):
+    if request.is_json:
+        config_list = cfg_repository.get_configs()
+        json_dict = request.get_json()
+        updated_config = np_config.from_json(json_dict)
+        result = updated_config.check_validity()
+        if result.valid:
+            for cfg in config_list:
+                if cfg.uuid == updated_config.uuid:
+                    cfg_repository.update_config(updated_config)
+                    queue.put_nowait(updated_config)
+                    return Response(status=201)
+            return (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
+        else:
+            return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+    else:
+        return (jsonify({"error": "Request must be JSON"}), 400)
+    
+def __handle_post(request):
+    if request.is_json:
+        json_dict = request.get_json()
+        config = np_config.from_json(json_dict)
+        result = config.check_validity()
+        if result.valid:
+            cfg_repository.save_config(config)
+            queue.put_nowait(config)
+            return Response(status=201)
+        return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+    else:
+        return (jsonify({"error": "Request must be JSON"}), 400)
+
+def __handle_delete(uuid):
+    cfg_repository.delete_config(uuid)
+    # Update the queue consumers of the config change
+    config_list = cfg_repository.get_configs()
+    queue.put_nowait(config_list)
+    return Response(status=201)
 
 def main():
     """Main function to start the threads:
