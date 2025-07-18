@@ -25,11 +25,6 @@ class NeoPixelConfigRepository:
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
-                # Remove SQL ALTER commands after migrating Pi clients to new schema
-                cursor.execute("""ALTER TABLE IF EXISTS NeopixelConfig
-                               RENAME COLUMN lightId TO uuid""")
-                cursor.execute("""ALTER TABLE IF EXISTS NeopixelConfig
-                               RENAME TO configs""")
                 cursor.execute(
                     """CREATE TABLE IF NOT EXISTS configs
                                 (id INT PRIMARY KEY NOT NULL, 
