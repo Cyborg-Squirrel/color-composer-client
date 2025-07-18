@@ -57,7 +57,7 @@ class NeoPixelRenderer:
         ]
 
     def render_frame(self, frame: RgbFrame):
-        for pin, np in self.neopixels:
+        for pin in self.neopixels:
             self.logger.info("Neopixel configured on pin %s", pin)
         np = self.neopixels[frame.pin]
         frame_length = len(frame.rgb_data)
