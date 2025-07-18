@@ -22,7 +22,7 @@ class NeoPixelRenderer:
 
     def update_config(self, config: NeoPixelConfig):
         if config.uuid in self.neopixels:
-            np = self.neopixels.pop(config.uuid)
+            np = self.neopixels.pop(config.pin)
             np.deinit()
         np = self.__neopixel_from_config(config)
         self.neopixels[config.uuid] = np
@@ -37,47 +37,27 @@ class NeoPixelRenderer:
         # Add configured NeoPixels to the dictionary
         for config in config_list:
             np = self.__neopixel_from_config(config)
-            self.neopixels[config.uuid] = np
+            self.neopixels[config.pin] = np
 
         # Remove any buffered frames for NeoPixels which have been removed from the config
         i = 0
         while i < len(self.buffered_frames):
             frame = self.buffered_frames[i]
             keep_in_buffer = False
-            for np_id in self.neopixels:
-                keep_in_buffer |= frame.light_id == np_id
+            for pin, np in self.neopixels.items():
+                keep_in_buffer |= frame.pin == pin
             if keep_in_buffer:
                 i += 1
             else:
                 self.buffered_frames.remove(frame)
 
-    def __neopixel_from_config(self, config: NeoPixelConfig):
-        pin = self.__board_pin_from_string(config.pin)
-        # Config value is 0-100, NeoPixel API is 0.0-1.0
-        brightness = config.brightness / 100
-        return NeoPixel(pin, config.leds, brightness=brightness, auto_write=False)
-
-    def __board_pin_from_string(self, pin: str):
-        # For Raspberry Pis pin D10 is recommended as the Neopixel data pin
-        # because it can be configured for use without sudo
-        # Add dtparam=spi=on and enable_uart=1 to /boot/firmware/config.txt
-        if pin == "D10":
-            return board.D10
-        if pin == "D12":
-            return board.D12
-        if pin == "D18":
-            return board.D18
-        if pin == "D21":
-            return board.D21
-        return None
-
-    def clear_buffer(self, light_id: str):
+    def clear_buffer(self, pin: str):
         self.buffered_frames[:] = [
-            f for f in self.buffered_frames if getattr(f, "light_id", None) != light_id
+            f for f in self.buffered_frames if getattr(f, "pin", None) != pin
         ]
 
     def render_frame(self, frame: RgbFrame):
-        np = self.neopixels[frame.light_id]
+        np = self.neopixels[frame.pin]
         frame_length = len(frame.rgb_data)
         for i in range(np.n if np.n <= frame_length else frame_length):
             np[i] = frame.rgb_data[i]
@@ -106,7 +86,7 @@ class NeoPixelRenderer:
             if diff <= threshold:
                 has_frame_with_matching_light_id = False
                 for ftr in frames_to_render:
-                    has_frame_with_matching_light_id |= ftr.light_id == frame.light_id
+                    has_frame_with_matching_light_id |= ftr.pin == frame.pin
                 if has_frame_with_matching_light_id:
                     i += 1
                 else:
@@ -120,8 +100,8 @@ class NeoPixelRenderer:
                     + str(frame.timestamp)
                     + " system time one second ago: "
                     + str(now_as_millis - 1000)
-                    + " lightId: "
-                    + str(frame.light_id)
+                    + " pin: "
+                    + str(frame.pin)
                 )
                 self.buffered_frames.remove(frame)
             else:
@@ -130,6 +110,26 @@ class NeoPixelRenderer:
         for frame in frames_to_render:
             self.render_frame(frame)
 
-    def set_brightness(self, light_id: str, brightness: int):
-        np = self.neopixels[light_id]
+    def set_brightness(self, pin: str, brightness: int):
+        np = self.neopixels[pin]
         np.brightness = brightness / 100
+
+    def __neopixel_from_config(self, config: NeoPixelConfig):
+        pin = self.__board_pin_from_string(config.pin)
+        # Config value is 0-100, NeoPixel API is 0.0-1.0
+        brightness = config.brightness / 100
+        return NeoPixel(pin, config.leds, brightness=brightness, auto_write=False)
+
+    def __board_pin_from_string(self, pin: str):
+        # For Raspberry Pis pin D10 is recommended as the Neopixel data pin
+        # because it can be configured for use without sudo
+        # Add dtparam=spi=on and enable_uart=1 to /boot/firmware/config.txt
+        if pin == "D10":
+            return board.D10
+        if pin == "D12":
+            return board.D12
+        if pin == "D18":
+            return board.D18
+        if pin == "D21":
+            return board.D21
+        return None

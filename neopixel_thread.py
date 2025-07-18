@@ -59,7 +59,7 @@ def _update_config(renderer: NeoPixelRenderer,
 
 def _handle_new_frame(renderer: NeoPixelRenderer,frame: RgbFrame):
     if frame.options.clear_buffer:
-        renderer.clear_buffer(frame.light_id)
+        renderer.clear_buffer(frame.pin)
 
     # If the timestamp is set to 0, render now.
     # Otherwise queue it to be rendered in the future.
