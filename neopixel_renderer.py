@@ -44,7 +44,7 @@ class NeoPixelRenderer:
         while i < len(self.buffered_frames):
             frame = self.buffered_frames[i]
             keep_in_buffer = False
-            for pin, np in self.neopixels.items():
+            for pin in self.neopixels:
                 keep_in_buffer |= frame.pin == pin
             if keep_in_buffer:
                 i += 1
@@ -57,6 +57,8 @@ class NeoPixelRenderer:
         ]
 
     def render_frame(self, frame: RgbFrame):
+        for pin, np in self.neopixels:
+            self.logger.info("Neopixel configured on pin %s", pin)
         np = self.neopixels[frame.pin]
         frame_length = len(frame.rgb_data)
         for i in range(np.n if np.n <= frame_length else frame_length):
