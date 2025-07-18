@@ -159,8 +159,7 @@ def __handle_patch():
                     queue.put_nowait(updated_config)
                     return Response(status=201)
             return (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
-        else:
-            return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+        return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
 
 def __handle_post():
