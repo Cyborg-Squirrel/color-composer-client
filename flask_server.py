@@ -120,14 +120,13 @@ def current_time():
 @app.route("/configuration", methods=["GET", "POST", "DELETE"])
 def configuration():
     """Endpoint to get, create, or delete NeoPixel configs"""
-    error = None
     if request.method == "GET":
         return __handle_get()
     if request.method == "PATCH":
-        return __handle_patch(request)
+        return __handle_patch()
     if request.method == "POST":
-        return __handle_post(request)
-    elif request.method == "DELETE":
+        return __handle_post()
+    if request.method == "DELETE":
         uuid = request.args.get("uuid")
         if uuid is not None:
             return __handle_delete(uuid)
@@ -147,7 +146,7 @@ def __handle_get():
     return Response('{"configList": ' + jsonified_config_list + "}",
                     mimetype="application/json")
 
-def __handle_patch(request):
+def __handle_patch():
     if request.is_json:
         config_list = cfg_repository.get_configs()
         json_dict = request.get_json()
@@ -162,10 +161,9 @@ def __handle_patch(request):
             return (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
         else:
             return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
-    else:
-        return (jsonify({"error": "Request must be JSON"}), 400)
-    
-def __handle_post(request):
+    return (jsonify({"error": "Request must be JSON"}), 400)
+
+def __handle_post():
     if request.is_json:
         json_dict = request.get_json()
         config = np_config.from_json(json_dict)
@@ -175,8 +173,7 @@ def __handle_post(request):
             queue.put_nowait(config)
             return Response(status=201)
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
-    else:
-        return (jsonify({"error": "Request must be JSON"}), 400)
+    return (jsonify({"error": "Request must be JSON"}), 400)
 
 def __handle_delete(uuid):
     cfg_repository.delete_config(uuid)
