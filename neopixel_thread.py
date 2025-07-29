@@ -42,14 +42,16 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
         if not renderer.queue_empty():
             renderer.render_queue()
 
+
 def __is_config_list(queue_msg):
     if isinstance(queue_msg, list):
         return all(isinstance(m, (int, npc.NeoPixelConfig)) for m in queue_msg)
     return False
 
-def _update_config(renderer: NeoPixelRenderer,
-                   logger: logging.Logger,
-                   new_config: npc.NeoPixelConfig):
+
+def _update_config(
+    renderer: NeoPixelRenderer, logger: logging.Logger, new_config: npc.NeoPixelConfig
+):
     validation_result = new_config.check_validity()
     if validation_result.valid:
         renderer.update_config(new_config)
@@ -57,7 +59,7 @@ def _update_config(renderer: NeoPixelRenderer,
         logger.error("Invalid NeoPixelConfig! %s", validation_result.reason)
 
 
-def _handle_new_frame(renderer: NeoPixelRenderer,frame: RgbFrame):
+def _handle_new_frame(renderer: NeoPixelRenderer, frame: RgbFrame):
     if frame.options.clear_buffer:
         renderer.clear_buffer(frame.pin)
 

@@ -66,9 +66,13 @@ def websocket_handler(websocket):
                     time.sleep(1 / 100)
                 websocket.send("ACK")
             else:
-                logger.warning("Unknown message type %s must be bytes", str(type(message)))
+                logger.warning(
+                    "Unknown message type %s must be bytes", str(type(message))
+                )
     except ConnectionClosed as cc:
-        logger.info("WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason)
+        logger.info(
+            "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
+        )
 
 
 def broadcast_handler():
@@ -131,6 +135,7 @@ def configuration():
         return (jsonify({"error": "No uuid url parameter specified"}), 400)
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+
 def __handle_get():
     config_list = cfg_repository.get_configs()
     jsonified_config_list = "["
@@ -141,8 +146,10 @@ def __handle_get():
             jsonified_config_list += ","
         i += 1
     jsonified_config_list += "]"
-    return Response('{"configList": ' + jsonified_config_list + "}",
-                    mimetype="application/json")
+    return Response(
+        '{"configList": ' + jsonified_config_list + "}", mimetype="application/json"
+    )
+
 
 def __handle_patch():
     if request.is_json:
@@ -156,9 +163,13 @@ def __handle_patch():
                     cfg_repository.update_config(updated_config)
                     queue.put_nowait(updated_config)
                     return Response(status=201)
-            return (jsonify({"error": "No config found with uuid " + updated_config.uuid}), 400)
+            return (
+                jsonify({"error": "No config found with uuid " + updated_config.uuid}),
+                400,
+            )
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
+
 
 def __handle_post():
     if request.is_json:
@@ -172,12 +183,14 @@ def __handle_post():
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
 
+
 def __handle_delete(uuid):
     cfg_repository.delete_config(uuid)
     # Update the queue consumers of the config change
     config_list = cfg_repository.get_configs()
     queue.put_nowait(config_list)
     return Response(status=201)
+
 
 def main():
     """Main function to start the threads:

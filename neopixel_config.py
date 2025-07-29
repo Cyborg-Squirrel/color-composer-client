@@ -9,6 +9,7 @@ from validation_result import ValidationResult
 
 class NeoPixelConfig:
     """Config class for NeoPixel LED strips"""
+
     # The server assigned uuid of these LEDs
     uuid: str
 
@@ -21,11 +22,17 @@ class NeoPixelConfig:
     # Int value from 0 to 100 representing the brightness of these LEDs
     brightness: int
 
-    def __init__(self, uuid: str, pin: str, leds: int, brightness: int):
+    # The color order (RGB, GRB, etc)
+    color_order: str
+
+    def __init__(
+        self, uuid: str, pin: str, leds: int, brightness: int, color_order: str
+    ):
         self.uuid = uuid
         self.pin = pin
         self.leds = leds
         self.brightness = brightness
+        self.color_order = color_order
 
     def check_validity(self) -> ValidationResult:
         """Validates this config."""
@@ -50,7 +57,21 @@ class NeoPixelConfig:
         ):
             return ValidationResult(
                 False,
-                "LED strip " + self.uuid + " must be assined to pin D10, D12, D18 or D21",
+                "LED strip "
+                + self.uuid
+                + " must be assined to pin D10, D12, D18 or D21",
+            )
+        if (
+            len(self.color_order) == 3
+            or not "r" in self.color_order.lower()
+            or not "g" in self.color_order.lower()
+            or not "b" in self.color_order.lower()
+        ):
+            return ValidationResult(
+                False,
+                "Color order "
+                + self.color_order
+                + " is invalid. Must be RGB, GRB, or another 3 letter combination.",
             )
         return ValidationResult(True, "")
 
@@ -72,4 +93,5 @@ def from_json(json_dict: dict) -> NeoPixelConfig:
     pin = json_dict.get("pin", "").strip()
     leds = json_dict.get("leds", 0)
     brightness = json_dict.get("brightness", 0)
-    return NeoPixelConfig(uuid, pin, leds, brightness)
+    color_order = json_dict.get("colorOrder", "").strip()
+    return NeoPixelConfig(uuid, pin, leds, brightness, color_order)
