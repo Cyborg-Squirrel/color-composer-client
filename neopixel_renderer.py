@@ -6,14 +6,14 @@ from datetime import datetime
 from logging import Logger
 
 import board
-from neopixel import NeoPixel
+import neopixel
 
 from neopixel_config import NeoPixelConfig
 from rgb_frame import RgbFrame
 
 
 class NeoPixelRenderer:
-    neopixels = dict[str, NeoPixel]()
+    neopixels = dict[str, neopixel.NeoPixel]()
     buffered_frames = list[RgbFrame]()
     logger: Logger
 
@@ -118,7 +118,13 @@ class NeoPixelRenderer:
         pin = self.__board_pin_from_string(config.pin)
         # Config value is 0-100, NeoPixel API is 0.0-1.0
         brightness = config.brightness / 100
-        return NeoPixel(pin, config.leds, brightness=brightness, auto_write=False)
+        return neopixel.NeoPixel(
+            pin,
+            config.leds,
+            brightness=brightness,
+            auto_write=False,
+            pixel_order=config.color_order,
+        )
 
     def __board_pin_from_string(self, pin: str):
         # For Raspberry Pis pin D10 is recommended as the Neopixel data pin

@@ -10,6 +10,7 @@ import neopixel_config as np_config
 # Surpressing lint to allow catching more types of exceptions
 # pylint: disable=broad-exception-caught
 
+
 class NeoPixelConfigRepository:
     """SQL Lite access class"""
 
@@ -28,10 +29,11 @@ class NeoPixelConfigRepository:
                 cursor.execute(
                     """CREATE TABLE IF NOT EXISTS configs
                                 (id INT PRIMARY KEY NOT NULL, 
-                                uuid TEXT NOT NULL UNIQUE, 
+                                uuid VARCHAR(50) NOT NULL UNIQUE, 
                                 leds INTEGER NOT NULL, 
                                 pin INTEGER NOT NULL UNIQUE, 
-                                brightness INTEGER NOT NULL)"""
+                                brightness INTEGER NOT NULL,
+                                color_order VARCHAR(4) NOT NULL)"""
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -46,13 +48,13 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT uuid, pin, leds, brightness FROM configs"
+                    "SELECT uuid, pin, leds, brightness, color_order FROM configs"
                 )
                 connection.commit()
 
                 for result in cursor:
                     config = np_config.NeoPixelConfig(
-                        result[0], result[1], result[2], result[3]
+                        result[0], result[1], result[2], result[3], result[4]
                     )
                     config_list.append(config)
         except sqlite3.Error as e:
@@ -74,9 +76,16 @@ class NeoPixelConfigRepository:
                 if sql_id == 0:
                     sql_id = 1
                 cursor.execute(
-                    """INSERT INTO configs (id, uuid, leds, pin, brightness) 
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (sql_id, config.uuid, config.leds, config.pin, config.brightness),
+                    """INSERT INTO configs (id, uuid, leds, pin, brightness, color_order) 
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (
+                        sql_id,
+                        config.uuid,
+                        config.leds,
+                        config.pin,
+                        config.brightness,
+                        config.color_order,
+                    ),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -90,9 +99,15 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?) 
+                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?, color_order = ?) 
                     WHERE uuid = ?""",
-                    (config.leds, config.pin, config.brightness, config.uuid),
+                    (
+                        config.leds,
+                        config.pin,
+                        config.brightness,
+                        config.uuid,
+                        config.color_order,
+                    ),
                 )
                 connection.commit()
         except sqlite3.Error as e:
