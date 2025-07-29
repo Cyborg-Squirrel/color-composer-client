@@ -2,6 +2,8 @@
 The NeoPixel config object.
 """
 
+# pylint: disable=too-many-positional-arguments
+
 import json
 
 from validation_result import ValidationResult
