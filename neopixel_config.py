@@ -2,7 +2,7 @@
 The NeoPixel config object.
 """
 
-# pylint: disable=too-many-positional-arguments,too-many-arguments
+# pylint: disable=too-many-positional-arguments, too-many-arguments
 
 import json
 
@@ -64,7 +64,7 @@ class NeoPixelConfig:
                 + " must be assined to pin D10, D12, D18 or D21",
             )
         if (
-            len(self.color_order) == 3
+            not len(self.color_order) == 3
             or not "r" in self.color_order.lower()
             or not "g" in self.color_order.lower()
             or not "b" in self.color_order.lower()
