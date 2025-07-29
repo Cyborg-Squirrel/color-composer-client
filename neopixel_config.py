@@ -65,9 +65,9 @@ class NeoPixelConfig:
             )
         if (
             not len(self.color_order) == 3
-            or not "r" in self.color_order.lower()
-            or not "g" in self.color_order.lower()
-            or not "b" in self.color_order.lower()
+            or not "R" in self.color_order
+            or not "G" in self.color_order
+            or not "B" in self.color_order
         ):
             return ValidationResult(
                 False,
