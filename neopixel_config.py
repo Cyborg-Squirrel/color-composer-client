@@ -2,7 +2,7 @@
 The NeoPixel config object.
 """
 
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-positional-arguments,too-many-arguments
 
 import json
 
