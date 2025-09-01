@@ -45,3 +45,4 @@ Use raspi-config or modify /boot/firmware/config.txt and add the following:
 
 *   Create a pull request
 *   Explain your changes
+*   The GitHub workflow must pass
