@@ -4,6 +4,8 @@
 
 This project provides a client for the [Color Composer](https://github.com/Cyborg-Squirrel/color-composer) server to control NeoPixel LED strips.
 
+The Color Composer Client is intended for use on the Raspberry Pi 3, 4, Zero and Zero 2 W.
+
 ## Components
 
 *   `neopixel_config_repository.py`:  Handles database interactions for NeoPixel configurations.
@@ -17,8 +19,6 @@ This project provides a client for the [Color Composer](https://github.com/Cybor
 *   `websockets`: Used for hosting a WebSocket to accept incoming RGB data.
 
 ## Getting Started
-
-This project is intended to run on Raspberry Pi 3, 4, Zero and Zero 2 W models. 
 
 1.  **Install Dependencies:**
 
