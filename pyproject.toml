@@ -30,6 +30,14 @@ dependencies = [
     "adafruit-blinka>=7.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10",
+    "pylint>=2.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/Cyborg-Squirrel/color-composer-client"
 Repository = "https://github.com/Cyborg-Squirrel/color-composer-client"
@@ -39,3 +47,8 @@ color-composer-client = "color_composer_client.flask_server:main"
 
 [tool.setuptools]
 packages = ["color_composer_client"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=color_composer_client --cov-report=html --cov-report=term-missing"
