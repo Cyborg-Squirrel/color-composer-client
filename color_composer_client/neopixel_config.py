@@ -65,12 +65,7 @@ class NeoPixelConfig:
                 + self.uuid
                 + " must have a brightness value between 0 and 100.",
             )
-        if (
-            not self.pin == "D10"
-            and not self.pin == "D12"
-            and not self.pin == "D18"
-            and not self.pin == "D21"
-        ):
+        if self.pin not in ["D10", "D12", "D18", "D21"]:
             return ValidationResult(
                 False,
                 "LED strip "
@@ -79,9 +74,9 @@ class NeoPixelConfig:
             )
         if (
             not len(self.color_order) == 3
-            or not "R" in self.color_order
-            or not "G" in self.color_order
-            or not "B" in self.color_order
+            or "R" not in self.color_order
+            or "G" not in self.color_order
+            or "B" not in self.color_order
         ):
             return ValidationResult(
                 False,
