@@ -39,11 +39,5 @@ Repository = "https://github.com/Cyborg-Squirrel/color-composer-client"
 [project.scripts]
 color-composer-client = "color_composer_client.flask_server:main"
 
-[tool.setuptools.packages]
-find = {}
-
-[tool.setuptools.package-dir]
-"" = "."
-
 [tool.setuptools]
 packages = ["color_composer_client"]
