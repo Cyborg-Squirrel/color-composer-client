@@ -5,10 +5,12 @@ The NeoPixel config object.
 # pylint: disable=too-many-positional-arguments, too-many-arguments
 
 import json
+from dataclasses import asdict, dataclass
 
 from color_composer_client.validation_result import ValidationResult
 
 
+@dataclass
 class NeoPixelConfig:
     """Configuration for a NeoPixel LED strip.
     
@@ -91,21 +93,9 @@ class NeoPixelConfig:
 
     def to_json(self) -> str:
         """Serializes this config to json."""
-        return json.dumps(
-            {
-                "uuid": self.uuid,
-                "pin": self.pin,
-                "leds": self.leds,
-                "brightness": self.brightness,
-            }
-        )
+        return json.dumps(asdict(self))
 
-
-def from_json(json_dict: dict) -> NeoPixelConfig:
-    """Serializes a config from json."""
-    uuid = json_dict.get("uuid", "").strip()
-    pin = json_dict.get("pin", "").strip()
-    leds = json_dict.get("leds", 0)
-    brightness = json_dict.get("brightness", 0)
-    color_order = json_dict.get("colorOrder", "").strip()
-    return NeoPixelConfig(uuid, pin, leds, brightness, color_order)
+    @classmethod
+    def from_json(cls, json_dict: dict) -> "NeoPixelConfig":
+        """Serializes a config from json."""
+        return cls(**json_dict)

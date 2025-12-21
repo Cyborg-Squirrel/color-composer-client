@@ -135,14 +135,14 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?, color_order = ?) 
+                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?, color_order = ? 
                     WHERE uuid = ?""",
                     (
                         config.leds,
                         config.pin,
                         config.brightness,
-                        config.uuid,
                         config.color_order,
+                        config.uuid,
                     ),
                 )
                 connection.commit()

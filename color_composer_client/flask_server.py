@@ -164,7 +164,7 @@ def __handle_patch():
     if request.is_json:
         config_list = cfg_repository.get_configs()
         json_dict = request.get_json()
-        updated_config = np_config.from_json(json_dict)
+        updated_config = np_config.NeoPixelConfig.from_json(json_dict)
         result = updated_config.check_validity()
         if result.valid:
             for cfg in config_list:
@@ -183,7 +183,7 @@ def __handle_patch():
 def __handle_post():
     if request.is_json:
         json_dict = request.get_json()
-        config = np_config.from_json(json_dict)
+        config = np_config.NeoPixelConfig.from_json(json_dict)
         result = config.check_validity()
         if result.valid:
             cfg_repository.save_config(config)
@@ -206,14 +206,14 @@ def main():
     WebSocket handler thread, UDP broadcast handler thread, and NeoPixel thread."""
     cfg_repository.create()
     p1 = mp.Process(name="ws_handler", target=ws_handler)
-    p2 = mp.Process(name="broadcast_handler", target=broadcast_handler)
+    # p2 = mp.Process(name="broadcast_handler", target=broadcast_handler)
     p3 = mp.Process(
         name="neopixel_thread",
         target=np_thread.neopixel_thread,
         args=(queue, logger),
     )
     p1.start()
-    p2.start()
+    # p2.start()
     p3.start()
 
     config_list = cfg_repository.get_configs()

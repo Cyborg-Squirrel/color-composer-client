@@ -2,6 +2,7 @@
 The renderer class. Sends specified color data to the LED strip using the neopixel package.
 """
 
+# pylint: disable=import-error
 from datetime import datetime
 from logging import Logger
 
@@ -217,4 +218,4 @@ class NeoPixelRenderer:
             return board.D18
         if pin == "D21":
             return board.D21
-        return None
+        raise ValueError("Invalid pin identifier: " + pin)
