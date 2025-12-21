@@ -7,9 +7,9 @@ import logging
 import multiprocessing as mp
 from queue import Empty
 
-import neopixel_config as npc
-from neopixel_renderer import NeoPixelRenderer
-from rgb_frame import RgbFrame
+from color_composer_client import neopixel_config as npc
+from color_composer_client.neopixel_renderer import NeoPixelRenderer
+from color_composer_client.rgb_frame import RgbFrame
 
 
 def neopixel_thread(queue: mp.Queue, logger: logging.Logger):

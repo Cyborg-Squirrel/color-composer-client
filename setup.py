@@ -11,16 +11,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Cyborg-Squirrel/color-composer-client",
-    package_dir={"": "src"},
-    py_modules=[
-        "flask_server",
-        "neopixel_config",
-        "neopixel_config_repository",
-        "neopixel_renderer",
-        "neopixel_thread",
-        "rgb_frame",
-        "validation_result",
-    ],
+    packages=find_packages(),
     install_requires=[
         "flask>=2.0.0",
         "websockets>=10.0",
@@ -39,7 +30,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "color-composer-client=src.flask_server:main",
+            "color-composer-client=color_composer_client.flask_server:main",
         ],
     },
 )

@@ -8,8 +8,8 @@ from logging import Logger
 import board
 import neopixel
 
-from neopixel_config import NeoPixelConfig
-from rgb_frame import RgbFrame
+from color_composer_client.neopixel_config import NeoPixelConfig
+from color_composer_client.rgb_frame import RgbFrame
 
 
 class NeoPixelRenderer:

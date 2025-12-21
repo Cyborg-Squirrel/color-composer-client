@@ -6,7 +6,7 @@ The NeoPixel config object.
 
 import json
 
-from validation_result import ValidationResult
+from color_composer_client.validation_result import ValidationResult
 
 
 class NeoPixelConfig:

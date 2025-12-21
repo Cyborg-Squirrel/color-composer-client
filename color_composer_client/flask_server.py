@@ -14,10 +14,11 @@ from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
 from websockets.sync.server import serve
 
-import neopixel_config as np_config
-import neopixel_thread as np_thread
-from neopixel_config_repository import NeoPixelConfigRepository
-from rgb_frame import RgbFrame, RgbFrameOptions
+from color_composer_client import neopixel_config as np_config
+from color_composer_client import neopixel_thread as np_thread
+from color_composer_client.neopixel_config_repository import \
+    NeoPixelConfigRepository
+from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
 WS_PORT = 8765

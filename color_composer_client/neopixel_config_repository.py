@@ -5,7 +5,7 @@ The SQLite repository. Does CRUD operations for config objects in the database.
 import logging
 import sqlite3
 
-import neopixel_config as np_config
+from color_composer_client import neopixel_config as np_config
 
 # Surpressing lint to allow catching more types of exceptions
 # pylint: disable=broad-exception-caught
