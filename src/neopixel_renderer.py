@@ -13,14 +13,35 @@ from rgb_frame import RgbFrame
 
 
 class NeoPixelRenderer:
+    """Manages NeoPixel LED strip rendering and configuration.
+    
+    Attributes:
+        neopixels: Dictionary mapping GPIO pins to NeoPixel objects.
+        buffered_frames: List of RGB frames waiting to be rendered.
+        logger: Logger instance for debugging and error reporting.
+    """
+    
     neopixels = dict[str, neopixel.NeoPixel]()
     buffered_frames = list[RgbFrame]()
     logger: Logger
 
     def __init__(self, logger: Logger):
+        """Initialize the NeoPixel renderer.
+        
+        Args:
+            logger: Logger instance for recording events and errors.
+        """
         self.logger = logger
 
     def update_config(self, config: NeoPixelConfig):
+        """Update or create a NeoPixel configuration.
+        
+        If a NeoPixel already exists on the specified pin, it will be
+        deinitialized and replaced with the new configuration.
+        
+        Args:
+            config: NeoPixelConfig object containing LED strip settings.
+        """
         if config.pin in self.neopixels:
             np = self.neopixels.pop(config.pin)
             np.deinit()
@@ -28,6 +49,15 @@ class NeoPixelRenderer:
         self.neopixels[config.pin] = np
 
     def update_configs(self, config_list: list[NeoPixelConfig]):
+        """Update all NeoPixel configurations at once.
+        
+        Deinits all existing NeoPixels, clears the configuration, and
+        applies a new list of configurations. Removes any buffered
+        frames for configurations no longer in use.
+        
+        Args:
+            config_list: List of NeoPixelConfig objects to apply.
+        """
         # deinit all neopixels to free up the GPIO pins
         for key in self.neopixels:
             self.neopixels[key].deinit()

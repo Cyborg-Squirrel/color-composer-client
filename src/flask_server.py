@@ -39,7 +39,15 @@ queue = mp.Queue()
 
 
 def websocket_handler(websocket):
-    """WebSocket handler function"""
+    """Handle incoming WebSocket connections for color data streaming.
+    
+    Receives binary color data from WebSocket clients, extracts rendering
+    options, parses RGB values, and sends the frames to the rendering
+    thread using the multiprocessing queue.
+    
+    Args:
+        websocket: WebSocket connection object for receiving messages.
+    """
     try:
         for message in websocket:
             if isinstance(message, bytes):
