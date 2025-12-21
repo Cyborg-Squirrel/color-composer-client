@@ -1,3 +1,10 @@
+"""Setup configuration for the Color Composer Client package.
+
+This configures the installation of the color-composer-client package,
+a client for controlling NeoPixel LED strips through the Color Composer server.
+It defines dependencies, metadata, and entry points for the package.
+"""
+
 from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:

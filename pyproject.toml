@@ -7,7 +7,7 @@ name = "color-composer-client"
 version = "0.1.0"
 description = "A client for Color Composer server to control NeoPixel LED strips"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 license = {text = "GNU General Public License v3 (GPLv3)"}
 authors = [
     {name = "Cyborg-Squirrel"},
@@ -15,8 +15,6 @@ authors = [
 keywords = ["neopixel", "led", "raspberry-pi", "color-composer"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
