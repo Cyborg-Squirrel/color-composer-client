@@ -7,13 +7,22 @@ import logging
 import multiprocessing as mp
 from queue import Empty
 
-import neopixel_config as npc
-from neopixel_renderer import NeoPixelRenderer
-from rgb_frame import RgbFrame
+from color_composer_client import neopixel_config as npc
+from color_composer_client.neopixel_renderer import NeoPixelRenderer
+from color_composer_client.rgb_frame import RgbFrame
 
 
 def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
-    """Starts the thread. This will run in the background until the process is killed."""
+    """Main thread function for processing NeoPixel render requests.
+    
+    Continuously monitors the multiprocessing queue for NeoPixelConfig updates
+    and RgbFrames, updating the renderer accordingly. Runs until the process
+    is terminated.
+    
+    Args:
+        queue: Multiprocessing queue for receiving configuration and frame data.
+        logger: Logger instance for recording thread events and errors.
+    """
     logger.info("Starting neopixel thread...")
     # One hundredth of a second
     queue_timeout_fast = 1 / 100

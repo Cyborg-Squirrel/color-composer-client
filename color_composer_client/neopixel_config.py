@@ -6,30 +6,38 @@ The NeoPixel config object.
 
 import json
 
-from validation_result import ValidationResult
+from color_composer_client.validation_result import ValidationResult
 
 
 class NeoPixelConfig:
-    """Config class for NeoPixel LED strips"""
+    """Configuration for a NeoPixel LED strip.
+    
+    Attributes:
+        uuid: Server-assigned unique identifier for the LED strip.
+        pin: GPIO pin number connected to the LED strip.
+        leds: Total number of individual LEDs in the strip.
+        brightness: LED brightness level from 0 to 100.
+        color_order: LED color order format (e.g., 'RGB', 'GRB', 'BGR').
+    """
 
-    # The server assigned uuid of these LEDs
     uuid: str
-
-    # The data pin connected to the LEDs
     pin: str
-
-    # The number of LEDs
     leds: int
-
-    # Int value from 0 to 100 representing the brightness of these LEDs
     brightness: int
-
-    # The color order (RGB, GRB, etc)
     color_order: str
 
     def __init__(
         self, uuid: str, pin: str, leds: int, brightness: int, color_order: str
     ):
+        """Initialize a NeoPixel configuration.
+        
+        Args:
+            uuid: Server-assigned unique identifier for the LED strip.
+            pin: GPIO pin number for the strip's data line.
+            leds: Number of LEDs in the strip.
+            brightness: Brightness level (0-100).
+            color_order: Color channel order (RGB, GRB, etc).
+        """
         self.uuid = uuid
         self.pin = pin
         self.leds = leds
@@ -37,7 +45,11 @@ class NeoPixelConfig:
         self.color_order = color_order
 
     def check_validity(self) -> ValidationResult:
-        """Validates this config."""
+        """Validate the NeoPixel configuration.
+        
+        Returns:
+            ValidationResult: Object containing validity status and error message if invalid.
+        """
         if self.uuid.isspace() or len(self.uuid) == 0:
             return ValidationResult(False, "LED strip id must be non-blank")
         if self.leds < 1:

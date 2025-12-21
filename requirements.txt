@@ -1,0 +1,4 @@
+flask>=2.0.0
+websockets>=10.0
+adafruit-circuitpython-neopixel>=6.0.0
+adafruit-blinka>=7.0.0

@@ -14,10 +14,11 @@ from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
 from websockets.sync.server import serve
 
-import neopixel_config as np_config
-import neopixel_thread as np_thread
-from neopixel_config_repository import NeoPixelConfigRepository
-from rgb_frame import RgbFrame, RgbFrameOptions
+from color_composer_client import neopixel_config as np_config
+from color_composer_client import neopixel_thread as np_thread
+from color_composer_client.neopixel_config_repository import \
+    NeoPixelConfigRepository
+from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
 WS_PORT = 8765
@@ -39,7 +40,15 @@ queue = mp.Queue()
 
 
 def websocket_handler(websocket):
-    """WebSocket handler function"""
+    """Handle incoming WebSocket connections for color data streaming.
+    
+    Receives binary color data from WebSocket clients, extracts rendering
+    options, parses RGB values, and sends the frames to the rendering
+    thread using the multiprocessing queue.
+    
+    Args:
+        websocket: WebSocket connection object for receiving messages.
+    """
     try:
         for message in websocket:
             if isinstance(message, bytes):
