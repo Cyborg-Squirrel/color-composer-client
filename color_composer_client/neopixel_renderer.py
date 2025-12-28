@@ -23,8 +23,10 @@ class NeoPixelRenderer:
     """
 
     neopixels = dict[str, neopixel.NeoPixel]()
+    configs = dict[str, NeoPixelConfig]()
     buffered_frames = list[RgbFrame]()
     logger: Logger
+    power_limit: int = 0
 
     def __init__(self, logger: Logger):
         """Initialize the NeoPixel renderer.
@@ -33,6 +35,14 @@ class NeoPixelRenderer:
             logger: Logger instance for recording events and errors.
         """
         self.logger = logger
+
+    def set_power_limit(self, power_limit: int):
+        """Set the power limit for all NeoPixel strips.
+        
+        Args:
+            power_limit: Maximum power in milliamps.
+        """
+        self.power_limit = power_limit
 
     def update_config(self, config: NeoPixelConfig):
         """Update or create a NeoPixel configuration.
@@ -48,6 +58,7 @@ class NeoPixelRenderer:
             np.deinit()
         np = self.__neopixel_from_config(config)
         self.neopixels[config.pin] = np
+        self.configs[config.pin] = config
 
     def update_configs(self, config_list: list[NeoPixelConfig]):
         """Update all NeoPixel configurations at once.
@@ -64,11 +75,13 @@ class NeoPixelRenderer:
             self.neopixels[key].deinit()
 
         self.neopixels.clear()
+        self.configs.clear()
 
         # Add configured NeoPixels to the dictionary
         for config in config_list:
             np = self.__neopixel_from_config(config)
             self.neopixels[config.pin] = np
+            self.configs[config.pin] = config
 
         # Remove any buffered frames for NeoPixels which have been removed from the config
         i = 0
@@ -99,7 +112,15 @@ class NeoPixelRenderer:
             frame: RgbFrame object containing color data and pin information.
         """
         np = self.neopixels[frame.pin]
+        config = self.configs[frame.pin]
         frame_length = len(frame.rgb_data)
+        if self.power_limit > 0:
+            estimated_power = self.__calculate_power_usage(frame)
+            if estimated_power >= self.power_limit and estimated_power > 0:
+                new_brightness = int(config.brightness * self.power_limit / estimated_power)
+                self.set_brightness(frame.pin, new_brightness)
+            else:
+                self.set_brightness(frame.pin, config.brightness)
         for i in range(np.n if np.n <= frame_length else frame_length):
             np[i] = frame.rgb_data[i]
         np.show()
@@ -177,6 +198,24 @@ class NeoPixelRenderer:
         """
         np = self.neopixels[pin]
         np.brightness = brightness / 100
+
+    def __calculate_power_usage(self, frame: RgbFrame) -> int:
+        """Estimate the power usage of a NeoPixel strip.
+        
+        Args:
+            frame: RgbFrame object to estimate power usage of.
+            
+        Returns:
+            Estimated power usage in milliamps.
+        """
+        # Each NeoPixel can draw up to 60mA at full brightness 20mA per LED (R + G + B)
+        max_power_per_led_ma = 60
+        estimated_power = 0
+        for rgb in frame.rgb_data:
+            r, g, b = rgb
+            led_power = (r / 255 + g / 255 + b / 255) * max_power_per_led_ma
+            estimated_power += led_power
+        return int(estimated_power)
 
     def __neopixel_from_config(self, config: NeoPixelConfig):
         """Create a NeoPixel object from configuration.

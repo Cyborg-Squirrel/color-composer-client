@@ -44,7 +44,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS configs
+                    """CREATE TABLE IF NOT EXISTS np_configs
                                 (id INT PRIMARY KEY NOT NULL, 
                                 uuid VARCHAR(50) NOT NULL UNIQUE, 
                                 leds INTEGER NOT NULL, 
@@ -70,7 +70,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT uuid, pin, leds, brightness, color_order FROM configs"
+                    "SELECT uuid, pin, leds, brightness, color_order FROM np_configs"
                 )
                 connection.commit()
 
@@ -97,7 +97,7 @@ class NeoPixelConfigRepository:
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
-                cursor.execute("SELECT id FROM configs ORDER BY id DESC LIMIT 1")
+                cursor.execute("SELECT id FROM np_configs ORDER BY id DESC LIMIT 1")
                 connection.commit()
                 sql_id = 0
                 for result in cursor:
@@ -105,7 +105,7 @@ class NeoPixelConfigRepository:
                 if sql_id == 0:
                     sql_id = 1
                 cursor.execute(
-                    """INSERT INTO configs (id, uuid, leds, pin, brightness, color_order) 
+                    """INSERT INTO np_configs (id, uuid, leds, pin, brightness, color_order) 
                     VALUES (?, ?, ?, ?, ?, ?)""",
                     (
                         sql_id,
@@ -135,7 +135,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """UPDATE configs SET leds = ?, pin = ?, brightness = ?, color_order = ? 
+                    """UPDATE np_configs SET leds = ?, pin = ?, brightness = ?, color_order = ? 
                     WHERE uuid = ?""",
                     (
                         config.leds,
@@ -157,7 +157,7 @@ class NeoPixelConfigRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "DELETE FROM configs WHERE uuid = ?",
+                    "DELETE FROM np_configs WHERE uuid = ?",
                     (light_id,),
                 )
                 connection.commit()

@@ -45,6 +45,9 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
             for cfg in queue_msg:
                 logger.debug("Config %s", cfg.to_json())
                 _update_config(renderer, logger, cfg)
+        elif queue_msg is not None and isinstance(queue_msg, npc.GlobalSettings):
+            logger.debug("Received GlobalSettings %s", queue_msg.to_json())
+            renderer.set_power_limit(queue_msg.power_limit)
         elif queue_msg is not None and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
         idle = renderer.queue_empty() and queue_msg is None

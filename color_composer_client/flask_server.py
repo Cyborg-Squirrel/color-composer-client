@@ -16,6 +16,9 @@ from websockets.sync.server import serve
 
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
+from color_composer_client.global_settings import GlobalSettings
+from color_composer_client.global_settings_repository import \
+    GlobalSettingsRepository
 from color_composer_client.neopixel_config_repository import \
     NeoPixelConfigRepository
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
@@ -33,7 +36,8 @@ logger.setLevel(logging.DEBUG)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-cfg_repository = NeoPixelConfigRepository("config.db", logger)
+np_config_repository = NeoPixelConfigRepository("config.db", logger)
+settings_repository = GlobalSettingsRepository("config.db", logger)
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
 queue = mp.Queue()
@@ -128,25 +132,52 @@ def current_time():
     return jsonify({"millisSinceEpoch": now_as_millis})
 
 
-@app.route("/configuration", methods=["GET", "POST", "DELETE"])
-def configuration():
+@app.route("/strips-config", methods=["GET", "POST", "PATCH", "DELETE"])
+def strips_config():
     """Endpoint to get, create, or delete NeoPixel configs"""
     if request.method == "GET":
-        return __handle_get()
+        return __handle_strips_config_get()
     if request.method == "PATCH":
-        return __handle_patch()
+        return __handle_strips_config_patch()
     if request.method == "POST":
-        return __handle_post()
+        return __handle_strips_config_post()
     if request.method == "DELETE":
         uuid = request.args.get("uuid")
         if uuid is not None:
-            return __handle_delete(uuid)
+            return __handle_strips_config_delete(uuid)
         return (jsonify({"error": "No uuid url parameter specified"}), 400)
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+@app.route("/settings", methods=["GET", "PATCH"])
+def config():
+    """Endpoint to get, create, or delete global settings"""
+    if request.method == "GET":
+        return __handle_settings_get()
+    if request.method == "PATCH":
+        return __handle_settings_patch()
+    return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
-def __handle_get():
-    config_list = cfg_repository.get_configs()
+def __handle_settings_get():
+    settings = settings_repository.get_settings()
+    if settings is None:
+        return (jsonify({"error": "No settings found"}), 404)
+    settings_json = settings.to_json()
+    return Response(settings_json, mimetype="application/json")
+
+def __handle_settings_patch():
+    if request.is_json:
+        json_dict = request.get_json()
+        updated_config = GlobalSettings.from_json(json_dict)
+        result = updated_config.check_validity()
+        if result.valid:
+            settings_repository.update(updated_config)
+            queue.put_nowait(updated_config)
+            return Response(status=200)
+        return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
+    return (jsonify({"error": "Request must be JSON"}), 400)
+
+def __handle_strips_config_get():
+    config_list = np_config_repository.get_configs()
     jsonified_config_list = "["
     i = 0
     while i < len(config_list):
@@ -159,17 +190,16 @@ def __handle_get():
         '{"configList": ' + jsonified_config_list + "}", mimetype="application/json"
     )
 
-
-def __handle_patch():
+def __handle_strips_config_patch():
     if request.is_json:
-        config_list = cfg_repository.get_configs()
+        config_list = np_config_repository.get_configs()
         json_dict = request.get_json()
         updated_config = np_config.NeoPixelConfig.from_json(json_dict)
         result = updated_config.check_validity()
         if result.valid:
             for cfg in config_list:
                 if cfg.uuid == updated_config.uuid:
-                    cfg_repository.update_config(updated_config)
+                    np_config_repository.update_config(updated_config)
                     queue.put_nowait(updated_config)
                     return Response(status=201)
             return (
@@ -180,31 +210,46 @@ def __handle_patch():
     return (jsonify({"error": "Request must be JSON"}), 400)
 
 
-def __handle_post():
+def __handle_strips_config_post():
     if request.is_json:
         json_dict = request.get_json()
         config = np_config.NeoPixelConfig.from_json(json_dict)
         result = config.check_validity()
         if result.valid:
-            cfg_repository.save_config(config)
+            np_config_repository.save_config(config)
             queue.put_nowait(config)
             return Response(status=201)
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
 
 
-def __handle_delete(uuid):
-    cfg_repository.delete_config(uuid)
+def __handle_strips_config_delete(uuid):
+    np_config_repository.delete_config(uuid)
     # Update the queue consumers of the config change
-    config_list = cfg_repository.get_configs()
+    config_list = np_config_repository.get_configs()
     queue.put_nowait(config_list)
     return Response(status=201)
 
+def __init_db():
+    settings_repository.init()
+    np_config_repository.create()
+    settings = settings_repository.get_settings()
+    if settings is None:
+        default_settings = GlobalSettings.default()
+        settings_repository.create(default_settings)
+
+def __put_configs_in_queue():
+    config_list = np_config_repository.get_configs()
+    settings = settings_repository.get_settings()
+
+    queue.put_nowait(config_list)
+    if settings is not None:
+        queue.put_nowait(settings)
 
 def main():
     """Main function to start the threads:
     WebSocket handler thread, UDP broadcast handler thread, and NeoPixel thread."""
-    cfg_repository.create()
+    __init_db()
     p1 = mp.Process(name="ws_handler", target=ws_handler)
     # p2 = mp.Process(name="broadcast_handler", target=broadcast_handler)
     p3 = mp.Process(
@@ -216,8 +261,7 @@ def main():
     # p2.start()
     p3.start()
 
-    config_list = cfg_repository.get_configs()
-    queue.put_nowait(config_list)
+    __put_configs_in_queue()
     app.run(debug=False, use_reloader=False, port=8000, host="0.0.0.0")
 
 
