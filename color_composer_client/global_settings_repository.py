@@ -4,6 +4,7 @@ The SQLite repository. Does CRUD operations for global settings in the database.
 
 import logging
 import sqlite3
+from typing import Optional
 
 from color_composer_client import global_settings
 
@@ -54,7 +55,7 @@ class GlobalSettingsRepository:
         except Exception as e:
             self.logger.error(f"Error {e}")
 
-    def get_settings(self) -> global_settings.GlobalSettings | None:
+    def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
         
         Returns:

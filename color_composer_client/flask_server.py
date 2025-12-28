@@ -149,7 +149,7 @@ def strips_config():
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
 @app.route("/settings", methods=["GET", "PATCH"])
-def config():
+def global_settings():
     """Endpoint to get, create, or delete global settings"""
     if request.method == "GET":
         return __handle_settings_get()
