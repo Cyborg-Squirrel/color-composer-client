@@ -54,7 +54,7 @@ class TestNeoPixelConfigRepositoryCreation:
         with sqlite3.connect(temp_db) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='configs'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='np_configs'"
             )
             result = cursor.fetchone()
             assert result is not None

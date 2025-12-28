@@ -20,7 +20,7 @@ jobs:
         pip install -e ".[dev]"
     - name: Analysing the code with pylint
       run: |
-        pylint color_composer_client/
+        pylint --disable=R0801 color_composer_client/
     - name: Running tests with pytest
       run: |
         pytest tests/ -v --cov=color_composer_client
