@@ -148,13 +148,13 @@ def strips_config():
         return (jsonify({"error": "No uuid url parameter specified"}), 400)
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
-@app.route("/settings", methods=["GET", "PATCH"])
+@app.route("/settings", methods=["GET", "PATCH", "POST"])
 def global_settings():
     """Endpoint to get, create, or delete global settings"""
     if request.method == "GET":
         return __handle_settings_get()
-    if request.method == "PATCH":
-        return __handle_settings_patch()
+    if request.method in ("PATCH", "POST"):
+        return __handle_settings_patch_or_post()
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
 def __handle_settings_get():
@@ -164,12 +164,13 @@ def __handle_settings_get():
     settings_json = settings.to_json()
     return Response(settings_json, mimetype="application/json")
 
-def __handle_settings_patch():
+def __handle_settings_patch_or_post():
     if request.is_json:
         json_dict = request.get_json()
         updated_config = GlobalSettings.from_json(json_dict)
         result = updated_config.check_validity()
         if result.valid:
+            logger.info("Updating settings %s", updated_config.to_json())
             settings_repository.update(updated_config)
             queue.put_nowait(updated_config)
             return Response(status=200)
