@@ -13,7 +13,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="color-composer-client",
     version="0.1.0",
-    author="Ashley",
+    author="Cyborg-Squirrel",
     description="A client for Color Composer server to control NeoPixel LED strips",
     long_description=long_description,
     long_description_content_type="text/markdown",
