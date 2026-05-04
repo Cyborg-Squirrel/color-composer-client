@@ -53,15 +53,16 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
             renderer.set_power_limit(queue_msg.power_limit)
         elif queue_msg is not None and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
-        __emit_status(status_queue, renderer)
+        __emit_status(status_queue, renderer, logger)
         idle = renderer.queue_empty() and queue_msg is None
         if not renderer.queue_empty():
             renderer.render_queue()
 
-def __emit_status(status_queue: mp.Queue, renderer: NeoPixelRenderer):
-    while status_queue.empty() is False:
-        status_queue.get_nowait()
-    status_queue.put(RendererBufferStatus(frames_in_queue=len(renderer.buffered_frames)))
+def __emit_status(status_queue: mp.Queue, renderer: NeoPixelRenderer, logger: logging.Logger):
+    try:
+        status_queue.put(RendererBufferStatus(frames_in_queue=len(renderer.buffered_frames)))
+    except Exception as e:
+        logger.error("Failed to emit status update: %s: %s", type(e).__name__, e)
 
 def __is_config_list(queue_msg):
     if isinstance(queue_msg, list):

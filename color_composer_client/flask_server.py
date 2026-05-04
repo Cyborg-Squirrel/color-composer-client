@@ -46,8 +46,8 @@ np_config_repository = NeoPixelConfigRepository("config.db", logger)
 settings_repository = GlobalSettingsRepository("config.db", logger)
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
-input_queue = mp.Queue()
-status_queue = mp.Queue()
+input_queue = mp.Queue(size=1)
+status_queue = mp.Queue(size=1)
 
 
 def websocket_handler(websocket):
@@ -68,7 +68,7 @@ def websocket_handler(websocket):
                         "Renderer is overloaded with queued frames, "
                         "please wait before sending more frames."
                     ))
-                    return
+                    continue
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
