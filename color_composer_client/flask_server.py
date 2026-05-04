@@ -4,11 +4,13 @@ The main class and webserver. Handles color data WebSocket streams, and config R
 
 import logging
 import multiprocessing as mp
+import queue
 import socket
 import struct
 import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+from typing import Optional
 
 from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
@@ -21,10 +23,15 @@ from color_composer_client.global_settings_repository import \
     GlobalSettingsRepository
 from color_composer_client.neopixel_config_repository import \
     NeoPixelConfigRepository
+from color_composer_client.renderer_events import (GenericError,
+                                                   RendererBufferStatus,
+                                                   RendererEvent,
+                                                   StaleFrameError)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
 WS_PORT = 8765
+VERSION = "0.1.0"
 # maxBytes of a log file is 5MB
 # backupCount number of log files will be created until deleting old log files
 handler = RotatingFileHandler("cc_client.log", maxBytes=5 * 1024 * 1024, backupCount=1)
@@ -40,7 +47,8 @@ np_config_repository = NeoPixelConfigRepository("config.db", logger)
 settings_repository = GlobalSettingsRepository("config.db", logger)
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
-queue = mp.Queue()
+input_queue = mp.Queue()
+status_queue = mp.Queue()
 
 
 def websocket_handler(websocket):
@@ -74,10 +82,15 @@ def websocket_handler(websocket):
                     color_data.append(cd)
                     i += 3
                 frame = RgbFrame(pin, timestamp_int, options, color_data)
-                queue.put_nowait(frame)
-                while not queue.empty():
+                input_queue.put_nowait(frame)
+                while not input_queue.empty():
                     time.sleep(1 / 100)
-                websocket.send("ACK")
+                event: Optional[RendererEvent] = None
+                try:
+                    event = status_queue.get(timeout=1/100)
+                except queue.Empty:
+                    event = None
+                __handle_response(websocket, event)
             else:
                 logger.warning(
                     "Unknown message type %s must be bytes", str(type(message))
@@ -86,6 +99,19 @@ def websocket_handler(websocket):
         logger.info(
             "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
         )
+
+def __handle_response(websocket, event: RendererEvent):
+    if isinstance(event, RendererBufferStatus):
+        payload = struct.pack("<BQ", 0, event.frames_in_queue)
+    else:
+        if isinstance(event, StaleFrameError):
+            msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
+        elif isinstance(event, GenericError):
+            msg = event.message
+        else:
+            msg = "No response from renderer"
+        payload = struct.pack("<B", 1) + msg.encode("ascii")
+    websocket.send(struct.pack("<I", len(payload)) + payload)
 
 
 def broadcast_handler():
@@ -157,6 +183,11 @@ def global_settings():
         return __handle_settings_patch_or_post()
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+@app.route("/version", methods=["GET"])
+def version():
+    """Endpoint to get the version"""
+    return jsonify({"version": VERSION})
+
 def __handle_settings_get():
     settings = settings_repository.get_settings()
     if settings is None:
@@ -172,7 +203,7 @@ def __handle_settings_patch_or_post():
         if result.valid:
             logger.info("Updating settings %s", updated_config.to_json())
             settings_repository.update(updated_config)
-            queue.put_nowait(updated_config)
+            input_queue.put_nowait(updated_config)
             return Response(status=200)
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
@@ -201,7 +232,7 @@ def __handle_strips_config_patch():
             for cfg in config_list:
                 if cfg.uuid == updated_config.uuid:
                     np_config_repository.update_config(updated_config)
-                    queue.put_nowait(updated_config)
+                    input_queue.put_nowait(updated_config)
                     return Response(status=201)
             return (
                 jsonify({"error": "No config found with uuid " + updated_config.uuid}),
@@ -218,7 +249,7 @@ def __handle_strips_config_post():
         result = config.check_validity()
         if result.valid:
             np_config_repository.save_config(config)
-            queue.put_nowait(config)
+            input_queue.put_nowait(config)
             return Response(status=201)
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
@@ -228,7 +259,7 @@ def __handle_strips_config_delete(uuid):
     np_config_repository.delete_config(uuid)
     # Update the queue consumers of the config change
     config_list = np_config_repository.get_configs()
-    queue.put_nowait(config_list)
+    input_queue.put_nowait(config_list)
     return Response(status=201)
 
 def __init_db():
@@ -243,9 +274,9 @@ def __put_configs_in_queue():
     config_list = np_config_repository.get_configs()
     settings = settings_repository.get_settings()
 
-    queue.put_nowait(config_list)
+    input_queue.put_nowait(config_list)
     if settings is not None:
-        queue.put_nowait(settings)
+        input_queue.put_nowait(settings)
 
 def main():
     """Main function to start the threads:
@@ -256,7 +287,7 @@ def main():
     p3 = mp.Process(
         name="neopixel_thread",
         target=np_thread.neopixel_thread,
-        args=(queue, logger),
+        args=(input_queue, status_queue, logger),
     )
     p1.start()
     # p2.start()

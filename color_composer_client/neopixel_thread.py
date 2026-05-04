@@ -10,10 +10,11 @@ from queue import Empty
 from color_composer_client import neopixel_config as npc
 from color_composer_client.global_settings import GlobalSettings
 from color_composer_client.neopixel_renderer import NeoPixelRenderer
+from color_composer_client.renderer_events import RendererBufferStatus
 from color_composer_client.rgb_frame import RgbFrame
 
 
-def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
+def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: logging.Logger):
     """Main thread function for processing NeoPixel render requests.
     
     Continuously monitors the multiprocessing queue for NeoPixelConfig updates
@@ -21,7 +22,8 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
     is terminated.
     
     Args:
-        queue: Multiprocessing queue for receiving configuration and frame data.
+        input_queue: Multiprocessing queue for receiving configuration and frame data.
+        status_queue: Multiprocessing queue for emitting status updates.
         logger: Logger instance for recording thread events and errors.
     """
     logger.info("Starting neopixel thread...")
@@ -33,7 +35,7 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
     renderer = NeoPixelRenderer(logger)
     while True:
         try:
-            queue_msg = queue.get(
+            queue_msg = input_queue.get(
                 timeout=queue_timeout_fast if not idle else queue_timeout_slow
             )
         except Empty:
@@ -51,6 +53,7 @@ def neopixel_thread(queue: mp.Queue, logger: logging.Logger):
             renderer.set_power_limit(queue_msg.power_limit)
         elif queue_msg is not None and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
+        status_queue.put(RendererBufferStatus(frames_in_queue=len(renderer.buffered_frames)))
         idle = renderer.queue_empty() and queue_msg is None
         if not renderer.queue_empty():
             renderer.render_queue()
