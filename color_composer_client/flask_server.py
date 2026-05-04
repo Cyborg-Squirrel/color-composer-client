@@ -106,18 +106,16 @@ def websocket_handler(websocket):
         )
 
 def __handle_response(websocket, event: RendererEvent):
-    match event:
-        case RendererBufferStatus():
-            payload = struct.pack("<BQ", 0, event.frames_in_queue)
-        case StaleFrameError():
-            msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
-            payload = struct.pack("<B", 1) + msg.encode("utf-8")
-        case GenericError():
-            payload = struct.pack("<B", 1) + event.message.encode("utf-8")
-        case BackpressureError():
-            payload = struct.pack("<B", 1) + event.message.encode("utf-8")
-        case _:
-            payload = struct.pack("<B", 1) + "No response from renderer".encode("utf-8")
+    # isinstance checks used instead of match/case for Python 3.9 compatibility
+    if isinstance(event, RendererBufferStatus):
+        payload = struct.pack("<BQ", 0, event.frames_in_queue)
+    elif isinstance(event, StaleFrameError):
+        msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
+        payload = struct.pack("<B", 1) + msg.encode("utf-8")
+    elif isinstance(event, (GenericError, BackpressureError)):
+        payload = struct.pack("<B", 1) + event.message.encode("utf-8")
+    else:
+        payload = struct.pack("<B", 1) + "No response from renderer".encode("utf-8")
     websocket.send(struct.pack("<I", len(payload)) + payload)
 
 
