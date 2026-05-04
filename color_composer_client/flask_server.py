@@ -7,7 +7,6 @@ import multiprocessing as mp
 import queue
 import socket
 import struct
-import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Optional
@@ -64,6 +63,12 @@ def websocket_handler(websocket):
     try:
         for message in websocket:
             if isinstance(message, bytes):
+                if input_queue.empty() is False:
+                    __handle_response(websocket, GenericError(
+                        "Renderer is overloaded with queued frames, "
+                        "please wait before sending more frames."
+                    ))
+                    return
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
@@ -83,8 +88,6 @@ def websocket_handler(websocket):
                     i += 3
                 frame = RgbFrame(pin, timestamp_int, options, color_data)
                 input_queue.put_nowait(frame)
-                while not input_queue.empty():
-                    time.sleep(1 / 100)
                 event: Optional[RendererEvent] = None
                 try:
                     event = status_queue.get(timeout=1/100)
@@ -101,16 +104,16 @@ def websocket_handler(websocket):
         )
 
 def __handle_response(websocket, event: RendererEvent):
-    if isinstance(event, RendererBufferStatus):
-        payload = struct.pack("<BQ", 0, event.frames_in_queue)
-    else:
-        if isinstance(event, StaleFrameError):
+    match event:
+        case RendererBufferStatus():
+            payload = struct.pack("<BQ", 0, event.frames_in_queue)
+        case StaleFrameError():
             msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
-        elif isinstance(event, GenericError):
-            msg = event.message
-        else:
-            msg = "No response from renderer"
-        payload = struct.pack("<B", 1) + msg.encode("ascii")
+            payload = struct.pack("<B", 1) + msg.encode("utf-8")
+        case GenericError():
+            payload = struct.pack("<B", 1) + event.message.encode("utf-8")
+        case _:
+            payload = struct.pack("<B", 1) + "No response from renderer".encode("utf-8")
     websocket.send(struct.pack("<I", len(payload)) + payload)
 
 
