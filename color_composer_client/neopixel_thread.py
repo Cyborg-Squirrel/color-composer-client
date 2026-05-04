@@ -55,7 +55,7 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
             renderer.set_power_limit(queue_msg.power_limit)
         elif has_incoming_message and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
-        if has_incoming_message:
+            # Frame data comes from the WebSocket, so respond with the current status
             __emit_status(status_queue, renderer, logger)
         idle = renderer.queue_empty() and queue_msg is None
         if not renderer.queue_empty():
