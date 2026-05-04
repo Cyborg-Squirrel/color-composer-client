@@ -5,6 +5,7 @@ queue for the neopixel_renderer.
 
 import logging
 import multiprocessing as mp
+import queue
 from queue import Empty
 
 from color_composer_client import neopixel_config as npc
@@ -62,8 +63,10 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
 
 def __emit_status(status_queue: mp.Queue, renderer: NeoPixelRenderer, logger: logging.Logger):
     try:
-        status_queue.put(RendererBufferStatus(frames_in_queue=len(renderer.buffered_frames)))
-    except Exception as e:
+        status_queue.put_nowait(RendererBufferStatus(frames_in_queue=len(renderer.buffered_frames)))
+    except queue.Full:
+        logger.warning("Status queue is full, skipping status update")
+    except (OSError, ValueError) as e:
         logger.error("Failed to emit status update: %s: %s", type(e).__name__, e)
 
 def __is_config_list(queue_msg):

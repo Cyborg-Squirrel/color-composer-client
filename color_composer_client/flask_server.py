@@ -10,7 +10,6 @@ import struct
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Optional
-from unittest import case
 
 from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
@@ -48,8 +47,8 @@ np_config_repository = NeoPixelConfigRepository("config.db", logger)
 settings_repository = GlobalSettingsRepository("config.db", logger)
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
-input_queue = mp.Queue(size=1)
-status_queue = mp.Queue(size=1)
+input_queue = mp.Queue(maxsize=1)
+status_queue = mp.Queue(maxsize=1)
 
 
 def websocket_handler(websocket):
