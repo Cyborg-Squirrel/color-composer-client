@@ -92,7 +92,7 @@ def websocket_handler(websocket):
                     continue
                 event: Optional[RendererEvent] = None
                 try:
-                    event = status_queue.get(timeout=1/100)
+                    event = status_queue.get(timeout=1/50)
                 except queue.Empty:
                     event = None
                 __handle_response(websocket, event)
