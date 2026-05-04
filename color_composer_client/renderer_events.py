@@ -30,3 +30,8 @@ class StaleFrameError(RendererError):
 class GenericError(RendererError):
     """Catch-all renderer error."""
     message: str
+
+@dataclass
+class BackpressureError(RendererError):
+    """The sender is sending frames faster than the renderer can process them."""
+    message: str

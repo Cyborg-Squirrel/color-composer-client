@@ -40,20 +40,22 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
             )
         except Empty:
             queue_msg = None
-        if queue_msg is not None and isinstance(queue_msg, npc.NeoPixelConfig):
+        has_incoming_message = queue_msg is not None
+        if has_incoming_message and isinstance(queue_msg, npc.NeoPixelConfig):
             logger.debug("Received NeoPixelConfig %s", queue_msg.to_json())
             _update_config(renderer, logger, queue_msg)
-        elif queue_msg is not None and __is_config_list(queue_msg):
+        elif has_incoming_message and __is_config_list(queue_msg):
             logger.debug("Received NeoPixelConfig list")
             for cfg in queue_msg:
                 logger.debug("Config %s", cfg.to_json())
                 _update_config(renderer, logger, cfg)
-        elif queue_msg is not None and isinstance(queue_msg, GlobalSettings):
+        elif has_incoming_message and isinstance(queue_msg, GlobalSettings):
             logger.debug("Received GlobalSettings %s", queue_msg.to_json())
             renderer.set_power_limit(queue_msg.power_limit)
-        elif queue_msg is not None and isinstance(queue_msg, RgbFrame):
+        elif has_incoming_message and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
-        __emit_status(status_queue, renderer, logger)
+        if has_incoming_message:
+            __emit_status(status_queue, renderer, logger)
         idle = renderer.queue_empty() and queue_msg is None
         if not renderer.queue_empty():
             renderer.render_queue()

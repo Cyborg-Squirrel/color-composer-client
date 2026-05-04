@@ -10,6 +10,7 @@ import struct
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Optional
+from unittest import case
 
 from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
@@ -22,7 +23,8 @@ from color_composer_client.global_settings_repository import \
     GlobalSettingsRepository
 from color_composer_client.neopixel_config_repository import \
     NeoPixelConfigRepository
-from color_composer_client.renderer_events import (GenericError,
+from color_composer_client.renderer_events import (BackpressureError,
+                                                   GenericError,
                                                    RendererBufferStatus,
                                                    RendererEvent,
                                                    StaleFrameError)
@@ -63,12 +65,6 @@ def websocket_handler(websocket):
     try:
         for message in websocket:
             if isinstance(message, bytes):
-                if input_queue.empty() is False:
-                    __handle_response(websocket, GenericError(
-                        "Renderer is overloaded with queued frames, "
-                        "please wait before sending more frames."
-                    ))
-                    continue
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
@@ -87,7 +83,14 @@ def websocket_handler(websocket):
                     color_data.append(cd)
                     i += 3
                 frame = RgbFrame(pin, timestamp_int, options, color_data)
-                input_queue.put_nowait(frame)
+                try:
+                    input_queue.put_nowait(frame)
+                except queue.Full:
+                    __handle_response(websocket, BackpressureError(
+                        "Renderer is overloaded with queued frames, "
+                        "please wait before sending more frames."
+                    ))
+                    continue
                 event: Optional[RendererEvent] = None
                 try:
                     event = status_queue.get(timeout=1/100)
@@ -111,6 +114,8 @@ def __handle_response(websocket, event: RendererEvent):
             msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
             payload = struct.pack("<B", 1) + msg.encode("utf-8")
         case GenericError():
+            payload = struct.pack("<B", 1) + event.message.encode("utf-8")
+        case BackpressureError():
             payload = struct.pack("<B", 1) + event.message.encode("utf-8")
         case _:
             payload = struct.pack("<B", 1) + "No response from renderer".encode("utf-8")
