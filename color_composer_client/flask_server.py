@@ -47,7 +47,7 @@ np_config_repository = NeoPixelConfigRepository("config.db", logger)
 settings_repository = GlobalSettingsRepository("config.db", logger)
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
-input_queue = mp.Queue(maxsize=1)
+input_queue = mp.Queue(maxsize=2)
 status_queue = mp.Queue(maxsize=1)
 
 
@@ -263,8 +263,8 @@ def __handle_strips_config_post():
 def __handle_strips_config_delete(uuid):
     np_config_repository.delete_config(uuid)
     # Update the queue consumers of the config change
-    config_list = np_config_repository.get_configs()
-    input_queue.put_nowait(config_list)
+    neopixel_config_list = np_config_repository.get_configs()
+    input_queue.put_nowait(neopixel_config_list)
     return Response(status=201)
 
 def __init_db():
@@ -276,10 +276,10 @@ def __init_db():
         settings_repository.create(default_settings)
 
 def __put_configs_in_queue():
-    config_list = np_config_repository.get_configs()
+    neopixel_config_list = np_config_repository.get_configs()
     settings = settings_repository.get_settings()
 
-    input_queue.put_nowait(config_list)
+    input_queue.put_nowait(neopixel_config_list)
     if settings is not None:
         input_queue.put_nowait(settings)
 
