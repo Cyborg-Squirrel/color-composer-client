@@ -26,8 +26,7 @@ from color_composer_client.neopixel_config_repository import \
 from color_composer_client.renderer_events import (BackpressureError,
                                                    GenericError,
                                                    RendererBufferStatus,
-                                                   RendererEvent,
-                                                   StaleFrameError)
+                                                   RendererEvent)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
@@ -110,15 +109,18 @@ def websocket_handler(websocket):
 def __handle_response(websocket, event: RendererEvent):
     # isinstance checks used instead of match/case for Python 3.9 compatibility
     if isinstance(event, RendererBufferStatus):
-        payload = struct.pack("<BH", 0, event.frames_in_queue)
-    elif isinstance(event, StaleFrameError):
-        msg = f"Stale frame: {event.frame_timestamp} < {event.current_timestamp}"
-        payload = struct.pack("<B", 1) + msg.encode("utf-8")
-    elif isinstance(event, (GenericError, BackpressureError)):
-        payload = struct.pack("<B", 2) + event.message.encode("utf-8")
+        msg = struct.pack("<H", event.frames_in_queue)
+        payload = struct.pack("<BB", 0, len(msg)) + msg
+    elif isinstance(event, BackpressureError):
+        msg = event.message.encode("utf-8")
+        payload = struct.pack("<BB", 1, len(msg)) + msg
+    elif isinstance(event, GenericError):
+        msg = event.message.encode("utf-8")
+        payload = struct.pack("<BB", 2, len(msg)) + msg
     else:
-        payload = struct.pack("<B", 3) + "No response from renderer".encode("utf-8")
-    websocket.send(struct.pack("<I", len(payload)) + payload)
+        msg = "No response from renderer".encode("utf-8")
+        payload = struct.pack("<BB", 3, len(msg)) + msg
+    websocket.send(payload)
 
 
 def broadcast_handler():
