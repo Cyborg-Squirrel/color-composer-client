@@ -19,14 +19,14 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import \
-    GlobalSettingsRepository
-from color_composer_client.neopixel_config_repository import \
-    NeoPixelConfigRepository
-from color_composer_client.renderer_events import (BackpressureError,
-                                                   GenericError,
-                                                   RendererBufferStatus,
-                                                   RendererEvent)
+from color_composer_client.global_settings_repository import GlobalSettingsRepository
+from color_composer_client.neopixel_config_repository import NeoPixelConfigRepository
+from color_composer_client.renderer_events import (
+    BackpressureError,
+    GenericError,
+    RendererBufferStatus,
+    RendererEvent,
+)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
@@ -54,11 +54,11 @@ status_queue = mp.Queue(maxsize=1)
 
 def websocket_handler(websocket):
     """Handle incoming WebSocket connections for color data streaming.
-    
+
     Receives binary color data from WebSocket clients, extracts rendering
     options, parses RGB values, and sends the frames to the rendering
     thread using the multiprocessing queue.
-    
+
     Args:
         websocket: WebSocket connection object for receiving messages.
     """
@@ -86,14 +86,17 @@ def websocket_handler(websocket):
                 try:
                     input_queue.put_nowait(frame)
                 except queue.Full:
-                    __handle_response(websocket, BackpressureError(
-                        "Renderer is overloaded with queued frames, "
-                        "please wait before sending more frames."
-                    ))
+                    __handle_response(
+                        websocket,
+                        BackpressureError(
+                            "Renderer is overloaded with queued frames, "
+                            "please wait before sending more frames."
+                        ),
+                    )
                     continue
                 event: Optional[RendererEvent] = None
                 try:
-                    event = status_queue.get(timeout=1/50)
+                    event = status_queue.get(timeout=1 / 50)
                 except queue.Empty:
                     event = None
                 __handle_response(websocket, event)
@@ -105,6 +108,7 @@ def websocket_handler(websocket):
         logger.info(
             "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
         )
+
 
 def __handle_response(websocket, event: RendererEvent):
     # isinstance checks used instead of match/case for Python 3.9 compatibility
@@ -183,6 +187,7 @@ def strips_config():
         return (jsonify({"error": "No uuid url parameter specified"}), 400)
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+
 @app.route("/settings", methods=["GET", "PATCH", "POST"])
 def global_settings():
     """Endpoint to get, create, or delete global settings"""
@@ -192,10 +197,12 @@ def global_settings():
         return __handle_settings_patch_or_post()
     return (jsonify({"error": "Unsupported method " + request.method}), 400)
 
+
 @app.route("/version", methods=["GET"])
 def version():
     """Endpoint to get the version"""
     return jsonify({"version": VERSION})
+
 
 def __handle_settings_get():
     settings = settings_repository.get_settings()
@@ -203,6 +210,7 @@ def __handle_settings_get():
         return (jsonify({"error": "No settings found"}), 404)
     settings_json = settings.to_json()
     return Response(settings_json, mimetype="application/json")
+
 
 def __handle_settings_patch_or_post():
     if request.is_json:
@@ -217,6 +225,7 @@ def __handle_settings_patch_or_post():
         return (jsonify({"error": "Error parsing config JSON " + result.reason}), 400)
     return (jsonify({"error": "Request must be JSON"}), 400)
 
+
 def __handle_strips_config_get():
     config_list = np_config_repository.get_configs()
     jsonified_config_list = "["
@@ -230,6 +239,7 @@ def __handle_strips_config_get():
     return Response(
         '{"configList": ' + jsonified_config_list + "}", mimetype="application/json"
     )
+
 
 def __handle_strips_config_patch():
     if request.is_json:
@@ -271,6 +281,7 @@ def __handle_strips_config_delete(uuid):
     input_queue.put_nowait(neopixel_config_list)
     return Response(status=201)
 
+
 def __init_db():
     settings_repository.init()
     np_config_repository.create()
@@ -279,13 +290,15 @@ def __init_db():
         default_settings = GlobalSettings.default()
         settings_repository.create(default_settings)
 
+
 def __put_configs_in_queue():
     neopixel_config_list = np_config_repository.get_configs()
     settings = settings_repository.get_settings()
 
-    input_queue.put_nowait(neopixel_config_list)
+    input_queue.put(neopixel_config_list)
     if settings is not None:
-        input_queue.put_nowait(settings)
+        input_queue.put(settings)
+
 
 def main():
     """Main function to start the threads:
