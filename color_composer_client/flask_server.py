@@ -32,13 +32,8 @@ from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
 WS_PORT = 8765
-try:
-    _git_hash = subprocess.check_output(
-        ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL
-    ).decode().strip()
-    VERSION = f"0.1.{_git_hash}"
-except Exception:
-    VERSION = "0.1.0"
+VERSION = "0.1.0"
+
 # maxBytes of a log file is 5MB
 # backupCount number of log files will be created until deleting old log files
 handler = RotatingFileHandler("cc_client.log", maxBytes=5 * 1024 * 1024, backupCount=1)
