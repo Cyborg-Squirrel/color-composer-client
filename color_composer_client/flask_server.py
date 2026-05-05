@@ -7,7 +7,6 @@ import multiprocessing as mp
 import queue
 import socket
 import struct
-import subprocess
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Optional
