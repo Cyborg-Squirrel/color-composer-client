@@ -5,7 +5,6 @@ from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 from color_composer_client.validation_result import ValidationResult
 
 __version__ = "0.1.0"
-
 __all__ = [
     "NeoPixelConfig",
     "RgbFrame",
