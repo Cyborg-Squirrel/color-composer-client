@@ -14,10 +14,10 @@ from color_composer_client import global_settings
 
 class GlobalSettingsRepository:
     """SQLite database repository for global application settings.
-    
+
     Handles all CRUD (Create, Read, Update, Delete) operations for
     storing and retrieving the single global application settings entry.
-    
+
     Attributes:
         database_name: Path to the SQLite database file.
         logger: Logger instance for recording database operations.
@@ -28,7 +28,7 @@ class GlobalSettingsRepository:
 
     def __init__(self, database_name: str, logger: logging.Logger):
         """Initialize the global settings repository.
-        
+
         Args:
             database_name: Path to the SQLite database file.
             logger: Logger instance for error and debug logging.
@@ -38,26 +38,34 @@ class GlobalSettingsRepository:
 
     def init(self):
         """Create the settings table in the database if it doesn't exist.
-        
+
         Logs any SQLite or general errors encountered during table creation.
         """
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
-                cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS global_settings
-                                (id INT PRIMARY KEY NOT NULL, 
-                                power_limit INTEGER NOT NULL)"""
-                )
+                cursor.execute("""CREATE TABLE IF NOT EXISTS global_settings
+                                (id INT PRIMARY KEY NOT NULL,
+                                power_limit INTEGER NOT NULL)""")
+                self.__migrate(cursor)
                 connection.commit()
         except sqlite3.Error as e:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
             self.logger.error(f"Error {e}")
 
+    def __migrate(self, cursor: sqlite3.Cursor):
+        """Apply pending schema migrations in order."""
+        cursor.execute("PRAGMA table_info(global_settings)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "fade_timeout_ms" not in columns:
+            cursor.execute(
+                "ALTER TABLE global_settings ADD COLUMN fade_timeout_ms INTEGER"
+            )
+
     def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
-        
+
         Returns:
             GlobalSettings object if found, None if no settings exist or error occurs.
         """
@@ -65,13 +73,12 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT power_limit FROM global_settings WHERE id = 1"
+                    "SELECT power_limit, fade_timeout_ms FROM global_settings WHERE id = 1"
                 )
-                connection.commit()
 
                 result = cursor.fetchone()
                 if result:
-                    return global_settings.GlobalSettings(result[0])
+                    return global_settings.GlobalSettings(result[0], result[1])
         except sqlite3.Error as e:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
@@ -80,7 +87,7 @@ class GlobalSettingsRepository:
 
     def create(self, settings: global_settings.GlobalSettings):
         """Save the global settings to the database.
-        
+
         Args:
             settings: GlobalSettings object to save.
         """
@@ -88,9 +95,9 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """INSERT OR REPLACE INTO global_settings (id, power_limit) 
-                    VALUES (1, ?)""",
-                    (settings.power_limit,),
+                    """INSERT OR REPLACE INTO global_settings (id, power_limit, fade_timeout_ms)
+                    VALUES (1, ?, ?)""",
+                    (settings.power_limit, settings.fade_timeout_millis),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -100,10 +107,10 @@ class GlobalSettingsRepository:
 
     def update(self, settings: global_settings.GlobalSettings):
         """Update the global settings in the database.
-        
+
         Args:
             settings: GlobalSettings object with updated values.
-            
+
         Note:
             Logs any SQLite or general errors if the update operation fails.
         """
@@ -111,9 +118,9 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """UPDATE global_settings SET power_limit = ? 
+                    """UPDATE global_settings SET power_limit = ?, fade_timeout_ms = ?
                     WHERE id = 1""",
-                    (settings.power_limit,),
+                    (settings.power_limit, settings.fade_timeout_millis),
                 )
                 connection.commit()
         except sqlite3.Error as e:

@@ -189,6 +189,22 @@ class NeoPixelRenderer:
         for frame in frames_to_render:
             self.render_frame(frame)
 
+    def dim(self):
+        """Reduce every LED on all strips by 10 per channel, flooring at 0."""
+        for np in self.neopixels.values():
+            for i in range(np.n):
+                r, g, b = np[i]
+                np[i] = (max(0, r - 2), max(0, g - 2), max(0, b - 2))
+            np.show()
+
+    def is_blank(self) -> bool:
+        """Return True if every LED on all strips is (0, 0, 0)."""
+        for np in self.neopixels.values():
+            for i in range(np.n):
+                if np[i] != (0, 0, 0):
+                    return False
+        return True
+
     def set_brightness(self, pin: str, brightness: int):
         """Set the brightness for a specific NeoPixel strip.
         
