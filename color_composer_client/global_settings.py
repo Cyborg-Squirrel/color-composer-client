@@ -40,7 +40,7 @@ class GlobalSettings:
         Returns:
             GlobalSettings object with default values.
         """
-        return GlobalSettings(power_limit=0)
+        return GlobalSettings(power_limit=0, fade_timeout_millis=15000)
 
     def check_validity(self) -> ValidationResult:
         """Validate the global settings.

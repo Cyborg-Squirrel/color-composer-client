@@ -62,9 +62,6 @@ class GlobalSettingsRepository:
             )
         except sqlite3.OperationalError:
             pass
-        cursor.execute(
-            "UPDATE global_settings SET fade_timeout_ms = 15000 WHERE fade_timeout_ms IS NULL"
-        )
 
     def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
