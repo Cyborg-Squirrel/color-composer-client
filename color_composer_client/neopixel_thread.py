@@ -12,6 +12,7 @@ from queue import Empty
 from color_composer_client import neopixel_config as npc
 from color_composer_client.global_settings import GlobalSettings
 from color_composer_client.neopixel_renderer import NeoPixelRenderer
+from color_composer_client.renderer_events import RendererBufferStatus
 from color_composer_client.rgb_frame import RgbFrame
 
 
@@ -56,7 +57,8 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
         elif has_incoming_message and isinstance(queue_msg, GlobalSettings):
             logger.debug("Received GlobalSettings %s", queue_msg.to_json())
             renderer.set_power_limit(queue_msg.power_limit)
-            fade_timeout_ms = queue_msg.fade_timeout_ms if queue_msg.fade_timeout_ms is not None else fade_timeout_ms
+            if queue_msg.fade_timeout_ms is not None:
+                fade_timeout_ms = queue_msg.fade_timeout_ms
         elif has_incoming_message and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
             last_frame_time = datetime.now()
