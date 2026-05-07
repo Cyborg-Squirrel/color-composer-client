@@ -56,12 +56,12 @@ class GlobalSettingsRepository:
 
     def __migrate(self, cursor: sqlite3.Cursor):
         """Apply pending schema migrations in order."""
-        try:
+        cursor.execute("PRAGMA table_info(global_settings)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "fade_timeout_ms" not in columns:
             cursor.execute(
                 "ALTER TABLE global_settings ADD COLUMN fade_timeout_ms INTEGER"
             )
-        except sqlite3.OperationalError:
-            pass
 
     def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
@@ -75,7 +75,6 @@ class GlobalSettingsRepository:
                 cursor.execute(
                     "SELECT power_limit, fade_timeout_ms FROM global_settings WHERE id = 1"
                 )
-                connection.commit()
 
                 result = cursor.fetchone()
                 if result:

@@ -35,7 +35,7 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
     queue_timeout_slow = 1
     idle = False
     dimming = False
-    fade_timeout_ms = 1000
+    fade_timeout_millis = 1000
     last_frame_time = datetime.now()
     renderer = NeoPixelRenderer(logger)
     while True:
@@ -46,14 +46,14 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
         except Empty:
             queue_msg = None
         if queue_msg is not None:
-            frame_received, fade_timeout_ms = _process_message(
-                renderer, logger, status_queue, queue_msg, fade_timeout_ms
+            frame_received, fade_timeout_millis = _process_message(
+                renderer, logger, status_queue, queue_msg, fade_timeout_millis
             )
             if frame_received:
                 last_frame_time = datetime.now()
                 dimming = False
         idle = renderer.queue_empty() and queue_msg is None and not dimming
-        dimming = _tick_dimming(renderer, dimming, last_frame_time, fade_timeout_ms)
+        dimming = _tick_dimming(renderer, dimming, last_frame_time, fade_timeout_millis)
 
         if not renderer.queue_empty():
             renderer.render_queue()
