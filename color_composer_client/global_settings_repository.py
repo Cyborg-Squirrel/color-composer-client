@@ -38,7 +38,7 @@ class GlobalSettingsRepository:
 
     def init(self):
         """Create the settings table in the database if it doesn't exist.
-        
+
         Logs any SQLite or general errors encountered during table creation.
         """
         try:
@@ -46,14 +46,24 @@ class GlobalSettingsRepository:
                 cursor = connection.cursor()
                 cursor.execute(
                     """CREATE TABLE IF NOT EXISTS global_settings
-                                (id INT PRIMARY KEY NOT NULL, 
+                                (id INT PRIMARY KEY NOT NULL,
                                 power_limit INTEGER NOT NULL)"""
                 )
+                self.__migrate(cursor)
                 connection.commit()
         except sqlite3.Error as e:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
             self.logger.error(f"Error {e}")
+
+    def __migrate(self, cursor: sqlite3.Cursor):
+        """Apply pending schema migrations in order."""
+        try:
+            cursor.execute(
+                "ALTER TABLE global_settings ADD COLUMN fade_timeout_ms INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
 
     def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
@@ -65,13 +75,13 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT power_limit FROM global_settings WHERE id = 1"
+                    "SELECT power_limit, fade_timeout_ms FROM global_settings WHERE id = 1"
                 )
                 connection.commit()
 
                 result = cursor.fetchone()
                 if result:
-                    return global_settings.GlobalSettings(result[0])
+                    return global_settings.GlobalSettings(result[0], result[1])
         except sqlite3.Error as e:
             self.logger.error(f"sqlite3 error {e}")
         except Exception as e:
@@ -88,9 +98,9 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """INSERT OR REPLACE INTO global_settings (id, power_limit) 
-                    VALUES (1, ?)""",
-                    (settings.power_limit,),
+                    """INSERT OR REPLACE INTO global_settings (id, power_limit, fade_timeout_ms)
+                    VALUES (1, ?, ?)""",
+                    (settings.power_limit, settings.fade_timeout_ms),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -111,9 +121,9 @@ class GlobalSettingsRepository:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    """UPDATE global_settings SET power_limit = ? 
+                    """UPDATE global_settings SET power_limit = ?, fade_timeout_ms = ?
                     WHERE id = 1""",
-                    (settings.power_limit,),
+                    (settings.power_limit, settings.fade_timeout_ms),
                 )
                 connection.commit()
         except sqlite3.Error as e:

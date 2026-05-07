@@ -6,7 +6,9 @@ queue for the neopixel_renderer.
 import logging
 import multiprocessing as mp
 import queue
+from datetime import datetime
 from queue import Empty
+from typing import Optional
 
 from color_composer_client import neopixel_config as npc
 from color_composer_client.global_settings import GlobalSettings
@@ -17,11 +19,11 @@ from color_composer_client.rgb_frame import RgbFrame
 
 def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: logging.Logger):
     """Main thread function for processing NeoPixel render requests.
-    
+
     Continuously monitors the multiprocessing queue for NeoPixelConfig updates
     and RgbFrames, updating the renderer accordingly. Runs until the process
     is terminated.
-    
+
     Args:
         input_queue: Multiprocessing queue for receiving configuration and frame data.
         status_queue: Multiprocessing queue for emitting status updates.
@@ -33,6 +35,9 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
     # One second
     queue_timeout_slow = 1
     idle = False
+    dimming = False
+    fade_timeout_ms = 15000
+    last_frame_time = datetime.now()
     renderer = NeoPixelRenderer(logger)
     while True:
         try:
@@ -53,11 +58,26 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
         elif has_incoming_message and isinstance(queue_msg, GlobalSettings):
             logger.debug("Received GlobalSettings %s", queue_msg.to_json())
             renderer.set_power_limit(queue_msg.power_limit)
+            fade_timeout_ms = queue_msg.fade_timeout_ms if queue_msg.fade_timeout_ms is not None else fade_timeout_ms
         elif has_incoming_message and isinstance(queue_msg, RgbFrame):
             _handle_new_frame(renderer, queue_msg)
+            last_frame_time = datetime.now()
+            dimming = False
             # Frame data comes from the WebSocket, so respond with the current status
             __emit_status(status_queue, renderer, logger)
-        idle = renderer.queue_empty() and queue_msg is None
+        idle = renderer.queue_empty() and queue_msg is None and not dimming
+
+        if not dimming:
+            elapsed_ms = (datetime.now() - last_frame_time).total_seconds() * 1000
+            if elapsed_ms >= fade_timeout_ms and not renderer.is_blank():
+                dimming = True
+
+        if dimming:
+            if renderer.is_blank():
+                dimming = False
+            else:
+                renderer.dim()
+
         if not renderer.queue_empty():
             renderer.render_queue()
 
