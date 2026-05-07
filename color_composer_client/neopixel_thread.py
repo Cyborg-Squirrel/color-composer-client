@@ -8,12 +8,10 @@ import multiprocessing as mp
 import queue
 from datetime import datetime
 from queue import Empty
-from typing import Optional
 
 from color_composer_client import neopixel_config as npc
 from color_composer_client.global_settings import GlobalSettings
 from color_composer_client.neopixel_renderer import NeoPixelRenderer
-from color_composer_client.renderer_events import RendererBufferStatus
 from color_composer_client.rgb_frame import RgbFrame
 
 
