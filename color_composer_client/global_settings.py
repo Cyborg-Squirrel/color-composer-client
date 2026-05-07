@@ -28,7 +28,7 @@ class GlobalSettings:
 
         Args:
             power_limit: Maximum power consumption limit in milliamps.
-            fade_timeout_millis: Inactivity timeout in milliseconds before dimming starts. None to disable.
+            fade_timeout_millis: Inactivity timeout in milliseconds before dimming starts.
         """
         self.power_limit = power_limit
         self.fade_timeout_millis = fade_timeout_millis
