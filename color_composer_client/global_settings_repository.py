@@ -14,10 +14,10 @@ from color_composer_client import global_settings
 
 class GlobalSettingsRepository:
     """SQLite database repository for global application settings.
-    
+
     Handles all CRUD (Create, Read, Update, Delete) operations for
     storing and retrieving the single global application settings entry.
-    
+
     Attributes:
         database_name: Path to the SQLite database file.
         logger: Logger instance for recording database operations.
@@ -28,7 +28,7 @@ class GlobalSettingsRepository:
 
     def __init__(self, database_name: str, logger: logging.Logger):
         """Initialize the global settings repository.
-        
+
         Args:
             database_name: Path to the SQLite database file.
             logger: Logger instance for error and debug logging.
@@ -44,11 +44,9 @@ class GlobalSettingsRepository:
         try:
             with sqlite3.connect(self.database_name) as connection:
                 cursor = connection.cursor()
-                cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS global_settings
+                cursor.execute("""CREATE TABLE IF NOT EXISTS global_settings
                                 (id INT PRIMARY KEY NOT NULL,
-                                power_limit INTEGER NOT NULL)"""
-                )
+                                power_limit INTEGER NOT NULL)""")
                 self.__migrate(cursor)
                 connection.commit()
         except sqlite3.Error as e:
@@ -64,10 +62,13 @@ class GlobalSettingsRepository:
             )
         except sqlite3.OperationalError:
             pass
+        cursor.execute(
+            "UPDATE global_settings SET fade_timeout_ms = 15000 WHERE fade_timeout_ms IS NULL"
+        )
 
     def get_settings(self) -> Optional[global_settings.GlobalSettings]:
         """Retrieve the global settings from the database.
-        
+
         Returns:
             GlobalSettings object if found, None if no settings exist or error occurs.
         """
@@ -90,7 +91,7 @@ class GlobalSettingsRepository:
 
     def create(self, settings: global_settings.GlobalSettings):
         """Save the global settings to the database.
-        
+
         Args:
             settings: GlobalSettings object to save.
         """
@@ -110,10 +111,10 @@ class GlobalSettingsRepository:
 
     def update(self, settings: global_settings.GlobalSettings):
         """Update the global settings in the database.
-        
+
         Args:
             settings: GlobalSettings object with updated values.
-            
+
         Note:
             Logs any SQLite or general errors if the update operation fails.
         """

@@ -35,7 +35,7 @@ def neopixel_thread(input_queue: mp.Queue, status_queue: mp.Queue, logger: loggi
     queue_timeout_slow = 1
     idle = False
     dimming = False
-    fade_timeout_ms = 15000
+    fade_timeout_ms = 1000
     last_frame_time = datetime.now()
     renderer = NeoPixelRenderer(logger)
     while True:
