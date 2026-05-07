@@ -194,7 +194,7 @@ class NeoPixelRenderer:
         for np in self.neopixels.values():
             for i in range(np.n):
                 r, g, b = np[i]
-                np[i] = (max(0, r - 5), max(0, g - 5), max(0, b - 5))
+                np[i] = (max(0, r - 2), max(0, g - 2), max(0, b - 2))
             np.show()
 
     def is_blank(self) -> bool:
