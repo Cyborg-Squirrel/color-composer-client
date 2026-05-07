@@ -21,17 +21,17 @@ class GlobalSettings:
     """
 
     power_limit: int
-    fade_timeout_ms: Optional[int] = None
+    fade_timeout_millis: Optional[int] = None
 
-    def __init__(self, power_limit: int, fade_timeout_ms: Optional[int] = None):
+    def __init__(self, power_limit: int, fade_timeout_millis: Optional[int] = None):
         """Initialize global settings.
 
         Args:
             power_limit: Maximum power consumption limit in milliamps.
-            fade_timeout_ms: Inactivity timeout in ms before dimming starts. None to disable.
+            fade_timeout_millis: Inactivity timeout in milliseconds before dimming starts. None to disable.
         """
         self.power_limit = power_limit
-        self.fade_timeout_ms = fade_timeout_ms
+        self.fade_timeout_millis = fade_timeout_millis
 
     @classmethod
     def default(cls) -> "GlobalSettings":
@@ -52,8 +52,8 @@ class GlobalSettings:
             return ValidationResult(
                 False, "Power limit must be a non-negative integer."
             )
-        if self.fade_timeout_ms is not None:
-            if not isinstance(self.fade_timeout_ms, int) or self.fade_timeout_ms < 0:
+        if self.fade_timeout_millis is not None:
+            if not isinstance(self.fade_timeout_millis, int) or self.fade_timeout_millis < 0:
                 return ValidationResult(
                     False, "Fade timeout must be a non-negative integer."
                 )

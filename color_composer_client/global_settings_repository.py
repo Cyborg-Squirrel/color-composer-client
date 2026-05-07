@@ -100,7 +100,7 @@ class GlobalSettingsRepository:
                 cursor.execute(
                     """INSERT OR REPLACE INTO global_settings (id, power_limit, fade_timeout_ms)
                     VALUES (1, ?, ?)""",
-                    (settings.power_limit, settings.fade_timeout_ms),
+                    (settings.power_limit, settings.fade_timeout_millis),
                 )
                 connection.commit()
         except sqlite3.Error as e:
@@ -123,7 +123,7 @@ class GlobalSettingsRepository:
                 cursor.execute(
                     """UPDATE global_settings SET power_limit = ?, fade_timeout_ms = ?
                     WHERE id = 1""",
-                    (settings.power_limit, settings.fade_timeout_ms),
+                    (settings.power_limit, settings.fade_timeout_millis),
                 )
                 connection.commit()
         except sqlite3.Error as e:

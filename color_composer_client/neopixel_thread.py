@@ -81,8 +81,8 @@ def _process_message(renderer, logger, status_queue, queue_msg, fade_timeout_ms)
     elif isinstance(queue_msg, GlobalSettings):
         logger.debug("Received GlobalSettings %s", queue_msg.to_json())
         renderer.set_power_limit(queue_msg.power_limit)
-        if queue_msg.fade_timeout_ms is not None:
-            fade_timeout_ms = queue_msg.fade_timeout_ms
+        if queue_msg.fade_timeout_millis is not None:
+            fade_timeout_ms = queue_msg.fade_timeout_millis
     elif isinstance(queue_msg, RgbFrame):
         _handle_new_frame(renderer, queue_msg)
         _emit_status(status_queue, renderer, logger)
