@@ -91,7 +91,7 @@ def websocket_handler(websocket):
                         "please wait before sending more frames."
                     ),
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error processing frame: %s", e)
                 __handle_response(websocket, GenericError(f"Processing error: {str(e)}"))
             finally:
@@ -112,8 +112,8 @@ def __deserialize_frame(message: bytes) -> RgbFrame:
 
     try:
         pin = message[1:5].decode("ascii").strip()
-    except UnicodeDecodeError:
-        raise ValueError("Invalid GPIO pin encoding")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Invalid GPIO pin encoding") from exc
 
     timestamp_int = int.from_bytes(message[5:13], "little")
 
