@@ -72,24 +72,7 @@ def websocket_handler(websocket):
                 )
             elif isinstance(message, bytes):
                 busy = True
-                options_byte = message[0]
-                clear_buffer = (options_byte & 0x01) == 1
-                options = RgbFrameOptions(clear_buffer)
-
-                # The GPIO pin the LED strip is connected to
-                pin_bytes = message[1:5]
-                pin = pin_bytes.decode("ascii").strip()
-
-                # The time when to display the RGB data on the strip
-                timestamp_bytes = message[5:13]
-                timestamp_int = int.from_bytes(timestamp_bytes, "little")
-                i = 13
-                color_data = list[tuple[int, int, int]]()
-                while i < len(message):
-                    cd = (message[i], message[i + 1], message[i + 2])
-                    color_data.append(cd)
-                    i += 3
-                frame = RgbFrame(pin, timestamp_int, options, color_data)
+                frame = __deserialize_frame(message)
                 try:
                     input_queue.put_nowait(frame)
                 except queue.Full:
@@ -117,6 +100,29 @@ def websocket_handler(websocket):
         logger.info(
             "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
         )
+
+
+def __deserialize_frame(message: bytes) -> RgbFrame:
+    options_byte = message[0]
+    clear_buffer = (options_byte & 0x01) == 1
+    options = RgbFrameOptions(clear_buffer)
+
+    # The GPIO pin the LED strip is connected to
+    pin_bytes = message[1:5]
+    pin = pin_bytes.decode("ascii").strip()
+
+    # The time when to display the RGB data on the strip
+    timestamp_bytes = message[5:13]
+    timestamp_int = int.from_bytes(timestamp_bytes, "little")
+
+    i = 13
+    color_data = list[tuple[int, int, int]]()
+    while i < len(message):
+        cd = (message[i], message[i + 1], message[i + 2])
+        color_data.append(cd)
+        i += 3
+
+    return RgbFrame(pin, timestamp_int, options, color_data)
 
 
 def __handle_response(websocket, event: RendererEvent):
