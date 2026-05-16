@@ -18,14 +18,14 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import GlobalSettingsRepository
-from color_composer_client.neopixel_config_repository import NeoPixelConfigRepository
-from color_composer_client.renderer_events import (
-    BackpressureError,
-    GenericError,
-    RendererBufferStatus,
-    RendererEvent,
-)
+from color_composer_client.global_settings_repository import \
+    GlobalSettingsRepository
+from color_composer_client.neopixel_config_repository import \
+    NeoPixelConfigRepository
+from color_composer_client.renderer_events import (BackpressureError,
+                                                   GenericError,
+                                                   RendererBufferStatus,
+                                                   RendererEvent)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
@@ -49,7 +49,7 @@ settings_repository = GlobalSettingsRepository("config.db", logger)
 app = Flask(__name__.split(".", maxsplit=1)[0])
 input_queue = mp.Queue(maxsize=2)
 status_queue = mp.Queue(maxsize=1)
-
+busy = False
 
 def websocket_handler(websocket):
     """Handle incoming WebSocket connections for color data streaming.
@@ -63,7 +63,15 @@ def websocket_handler(websocket):
     """
     try:
         for message in websocket:
-            if isinstance(message, bytes):
+            if busy:
+                __handle_response(
+                    websocket,
+                    BackpressureError(
+                        "Frames are being sent too fast, please wait."
+                    ),
+                )
+            elif isinstance(message, bytes):
+                busy = True
                 options_byte = message[0]
                 clear_buffer = (options_byte & 0x01) == 1
                 options = RgbFrameOptions(clear_buffer)
@@ -98,11 +106,13 @@ def websocket_handler(websocket):
                     event = status_queue.get(timeout=1 / 50)
                 except queue.Empty:
                     event = None
+                busy = False
                 __handle_response(websocket, event)
             else:
                 logger.warning(
                     "Unknown message type %s must be bytes", str(type(message))
                 )
+                __handle_response(websocket, GenericError("Unknown message type, must be bytes"))
     except ConnectionClosed as cc:
         logger.info(
             "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
