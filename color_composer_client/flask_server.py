@@ -9,7 +9,6 @@ import socket
 import struct
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
-from typing import Optional
 
 from flask import Flask, Response, jsonify, request
 from websockets.exceptions import ConnectionClosed
@@ -18,8 +17,12 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import GlobalSettingsRepository
-from color_composer_client.neopixel_config_repository import NeoPixelConfigRepository
+from color_composer_client.global_settings_repository import (
+    GlobalSettingsRepository,
+)
+from color_composer_client.neopixel_config_repository import (
+    NeoPixelConfigRepository,
+)
 from color_composer_client.renderer_events import (
     BackpressureError,
     GenericError,
@@ -50,7 +53,6 @@ app = Flask(__name__.split(".", maxsplit=1)[0])
 input_queue = mp.Queue(maxsize=2)
 status_queue = mp.Queue(maxsize=1)
 
-
 def websocket_handler(websocket):
     """Handle incoming WebSocket connections for color data streaming.
 
@@ -62,51 +64,70 @@ def websocket_handler(websocket):
         websocket: WebSocket connection object for receiving messages.
     """
     try:
+        busy = False
         for message in websocket:
-            if isinstance(message, bytes):
-                options_byte = message[0]
-                clear_buffer = (options_byte & 0x01) == 1
-                options = RgbFrameOptions(clear_buffer)
+            if not isinstance(message, bytes):
+                logger.warning("Unknown message type %s must be bytes", type(message))
+                __handle_response(websocket, GenericError("Unknown message type, must be bytes"))
+                continue
 
-                # The GPIO pin the LED strip is connected to
-                pin_bytes = message[1:5]
-                pin = pin_bytes.decode("ascii").strip()
+            if busy:
+                __handle_response(
+                    websocket,
+                    BackpressureError("Frames are being sent too fast, please wait."),
+                )
+                continue
 
-                # The time when to display the RGB data on the strip
-                timestamp_bytes = message[5:13]
-                timestamp_int = int.from_bytes(timestamp_bytes, "little")
-                i = 13
-                color_data = list[tuple[int, int, int]]()
-                while i < len(message):
-                    cd = (message[i], message[i + 1], message[i + 2])
-                    color_data.append(cd)
-                    i += 3
-                frame = RgbFrame(pin, timestamp_int, options, color_data)
-                try:
-                    input_queue.put_nowait(frame)
-                except queue.Full:
-                    __handle_response(
-                        websocket,
-                        BackpressureError(
-                            "Renderer is overloaded with queued frames, "
-                            "please wait before sending more frames."
-                        ),
-                    )
-                    continue
-                event: Optional[RendererEvent] = None
+            try:
+                busy = True
+                frame = __deserialize_frame(message)
+                input_queue.put_nowait(frame)
+                event = None
                 try:
                     event = status_queue.get(timeout=1 / 50)
                 except queue.Empty:
-                    event = None
+                    pass
                 __handle_response(websocket, event)
-            else:
-                logger.warning(
-                    "Unknown message type %s must be bytes", str(type(message))
+            except queue.Full:
+                __handle_response(
+                    websocket,
+                    BackpressureError(
+                        "Renderer is overloaded with queued frames, "
+                        "please wait before sending more frames."
+                    ),
                 )
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.error("Error processing frame: %s", e)
+                __handle_response(websocket, GenericError(f"Processing error: {str(e)}"))
+            finally:
+                busy = False
     except ConnectionClosed as cc:
         logger.info(
-            "WebSocket connection closed. Code: %s Reason: %s", str(cc.code), cc.reason
+            "WebSocket connection closed. Code: %s Reason: %s", cc.code, cc.reason
         )
+
+
+def __deserialize_frame(message: bytes) -> RgbFrame:
+    if len(message) < 13 or (len(message) - 13) % 3 != 0:
+        raise ValueError("Invalid frame length: payload must be multiples of 3 bytes")
+
+    options_byte = message[0]
+    clear_buffer = (options_byte & 0x01) == 1
+    options = RgbFrameOptions(clear_buffer)
+
+    try:
+        pin = message[1:5].decode("ascii").strip()
+    except UnicodeDecodeError as exc:
+        raise ValueError("Invalid GPIO pin encoding") from exc
+
+    timestamp_int = int.from_bytes(message[5:13], "little")
+
+    color_data = [
+        (message[i], message[i + 1], message[i + 2])
+        for i in range(13, len(message), 3)
+    ]
+
+    return RgbFrame(pin, timestamp_int, options, color_data)
 
 
 def __handle_response(websocket, event: RendererEvent):
