@@ -49,7 +49,6 @@ settings_repository = GlobalSettingsRepository("config.db", logger)
 app = Flask(__name__.split(".", maxsplit=1)[0])
 input_queue = mp.Queue(maxsize=2)
 status_queue = mp.Queue(maxsize=1)
-busy = False
 
 def websocket_handler(websocket):
     """Handle incoming WebSocket connections for color data streaming.
@@ -62,6 +61,7 @@ def websocket_handler(websocket):
         websocket: WebSocket connection object for receiving messages.
     """
     try:
+        busy = False
         for message in websocket:
             if busy:
                 __handle_response(
