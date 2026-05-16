@@ -17,14 +17,18 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import \
-    GlobalSettingsRepository
-from color_composer_client.neopixel_config_repository import \
-    NeoPixelConfigRepository
-from color_composer_client.renderer_events import (BackpressureError,
-                                                   GenericError,
-                                                   RendererBufferStatus,
-                                                   RendererEvent)
+from color_composer_client.global_settings_repository import (
+    GlobalSettingsRepository,
+)
+from color_composer_client.neopixel_config_repository import (
+    NeoPixelConfigRepository,
+)
+from color_composer_client.renderer_events import (
+    BackpressureError,
+    GenericError,
+    RendererBufferStatus,
+    RendererEvent,
+)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
@@ -78,10 +82,11 @@ def websocket_handler(websocket):
                 busy = True
                 frame = __deserialize_frame(message)
                 input_queue.put_nowait(frame)
+                event = None
                 try:
                     event = status_queue.get(timeout=1 / 50)
                 except queue.Empty:
-                    event = None
+                    pass
                 __handle_response(websocket, event)
             except queue.Full:
                 __handle_response(
@@ -117,12 +122,10 @@ def __deserialize_frame(message: bytes) -> RgbFrame:
 
     timestamp_int = int.from_bytes(message[5:13], "little")
 
-    i = 13
-    color_data = []
-    while i < len(message):
-        cd = (message[i], message[i + 1], message[i + 2])
-        color_data.append(cd)
-        i += 3
+    color_data = [
+        (message[i], message[i + 1], message[i + 2])
+        for i in range(13, len(message), 3)
+    ]
 
     return RgbFrame(pin, timestamp_int, options, color_data)
 
