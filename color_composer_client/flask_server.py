@@ -17,18 +17,15 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import (
-    GlobalSettingsRepository,
-)
-from color_composer_client.neopixel_config_repository import (
-    NeoPixelConfigRepository,
-)
-from color_composer_client.renderer_events import (
-    BackpressureError,
-    GenericError,
-    RendererBufferStatus,
-    RendererEvent,
-)
+from color_composer_client.global_settings_repository import \
+    GlobalSettingsRepository
+from color_composer_client.neopixel_config_repository import \
+    NeoPixelConfigRepository
+from color_composer_client.renderer_events import (BackpressureError,
+                                                   GenericError,
+                                                   RendererBufferStatus,
+                                                   RendererEvent,
+                                                   StaleFrameError)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
@@ -81,6 +78,15 @@ def websocket_handler(websocket):
             try:
                 busy = True
                 frame = __deserialize_frame(message)
+                now_as_millis = int(datetime.now().timestamp() * 1000)
+                max_future_timestamp = now_as_millis + 5000
+                if frame.timestamp > max_future_timestamp or (frame.timestamp < now_as_millis
+                                                              and frame.timestamp != 0):
+                    __handle_response(
+                        websocket,
+                        StaleFrameError(frame.timestamp, now_as_millis),
+                    )
+                    continue
                 input_queue.put_nowait(frame)
                 event = None
                 try:
@@ -143,9 +149,12 @@ def __handle_response(websocket, event: RendererEvent):
     elif isinstance(event, GenericError):
         msg = event.message.encode("utf-8")
         payload = struct.pack("<BB", 2, len(msg)) + msg
+    elif isinstance(event, StaleFrameError):
+        msg = struct.pack("<Q", event.system_timestamp)
+        payload = struct.pack("<BB", 3, len(msg)) + msg
     else:
         msg = "No response from renderer".encode("utf-8")
-        payload = struct.pack("<BB", 3, len(msg)) + msg
+        payload = struct.pack("<BB", 4, len(msg)) + msg
     websocket.send(payload)
 
 
