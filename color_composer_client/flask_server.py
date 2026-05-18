@@ -87,7 +87,7 @@ def websocket_handler(websocket):
                                                               and frame.timestamp != 0):
                     __handle_response(
                         websocket,
-                        GenericError("Frame timestamp is too far in the future or in the past."),
+                        StaleFrameError(frame.timestamp, now_as_millis),
                     )
                     continue
                 input_queue.put_nowait(frame)
@@ -152,9 +152,12 @@ def __handle_response(websocket, event: RendererEvent):
     elif isinstance(event, GenericError):
         msg = event.message.encode("utf-8")
         payload = struct.pack("<BB", 2, len(msg)) + msg
+    elif isinstance(event, StaleFrameError):
+        msg = struct.pack("<Q", event.system_timestamp)
+        payload = struct.pack("<BB", 3, len(msg)) + msg
     else:
         msg = "No response from renderer".encode("utf-8")
-        payload = struct.pack("<BB", 3, len(msg)) + msg
+        payload = struct.pack("<BB", 4, len(msg)) + msg
     websocket.send(payload)
 
 

@@ -24,7 +24,7 @@ class RendererError(RendererEvent):
 class StaleFrameError(RendererError):
     """Frame timestamp is earlier than the current time."""
     frame_timestamp: int
-    current_timestamp: int
+    system_timestamp: int
 
 @dataclass
 class GenericError(RendererError):
