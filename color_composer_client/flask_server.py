@@ -96,6 +96,8 @@ def websocket_handler(websocket):
                         "please wait before sending more frames."
                     ),
                 )
+            except ConnectionClosed:
+                raise
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error processing frame: %s", e)
                 __handle_response(websocket, GenericError(f"Processing error: {str(e)}"))
