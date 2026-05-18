@@ -81,6 +81,14 @@ def websocket_handler(websocket):
             try:
                 busy = True
                 frame = __deserialize_frame(message)
+                now_as_millis = int(datetime.now().timestamp() * 1000)
+                max_future_timestamp = now_as_millis + 5000
+                if frame.timestamp > max_future_timestamp or (frame.timestamp < now_as_millis and frame.timestamp != 0):
+                    __handle_response(
+                        websocket,
+                        GenericError("Frame timestamp is too far in the future or in the past."),
+                    )
+                    continue
                 input_queue.put_nowait(frame)
                 event = None
                 try:
