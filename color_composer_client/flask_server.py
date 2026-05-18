@@ -17,18 +17,15 @@ from websockets.sync.server import serve
 from color_composer_client import neopixel_config as np_config
 from color_composer_client import neopixel_thread as np_thread
 from color_composer_client.global_settings import GlobalSettings
-from color_composer_client.global_settings_repository import (
-    GlobalSettingsRepository,
-)
-from color_composer_client.neopixel_config_repository import (
-    NeoPixelConfigRepository,
-)
-from color_composer_client.renderer_events import (
-    BackpressureError,
-    GenericError,
-    RendererBufferStatus,
-    RendererEvent,
-)
+from color_composer_client.global_settings_repository import \
+    GlobalSettingsRepository
+from color_composer_client.neopixel_config_repository import \
+    NeoPixelConfigRepository
+from color_composer_client.renderer_events import (BackpressureError,
+                                                   GenericError,
+                                                   RendererBufferStatus,
+                                                   RendererEvent,
+                                                   StaleFrameError)
 from color_composer_client.rgb_frame import RgbFrame, RgbFrameOptions
 
 API_PORT = 8000
