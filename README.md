@@ -49,12 +49,6 @@ Use raspi-config or modify /boot/firmware/config.txt and add the following:
 `dtparam=spi=on`
 `enable_uart=1`
 
-### Set central time on boot
-```
-sudo crontab -e
-```
-Add to crontab: `@reboot timedatectl set-timezone America/Chicago`
-
 ### Pi Configuration
 
 Each Raspberry Pi client has a configuration which contains:
